@@ -1,0 +1,249 @@
+# Arquitectura de Aplicación IPTV
+
+## Análisis del API y Funcionalidades
+
+### Entidades Principales
+- **Channels**: Los canales de televisión (entidad central)
+- **Feeds**: Diferentes señales/versiones de cada canal
+- **Streams**: URLs de transmisión de cada feed
+- **Guides**: Información de programación EPG
+
+### Entidades de Soporte (Filtros/Metadatos)
+- **Countries**: Filtros geográficos principales
+- **Subdivisions**: Filtros por estados/provincias
+- **Regions**: Agrupaciones geográficas
+- **Categories**: Clasificación de contenido
+- **Languages**: Filtros por idioma
+- **Timezones**: Manejo de horarios
+- **Blocklist**: Contenido bloqueado
+
+## Arquitectura de la Aplicación
+
+### 1. **Capa de Presentación (Frontend)**
+
+#### **Componentes Principales**
+```
+├── Header/Navigation
+├── Filters Sidebar
+│   ├── Country Filter
+│   ├── Category Filter  
+│   ├── Language Filter
+│   ├── Region Filter
+│   └── Quality Filter
+├── Channel Grid/List
+├── Channel Detail Modal
+├── Video Player
+└── EPG/Guide Viewer
+```
+
+#### **Páginas/Vistas**
+- **Home**: Lista principal de canales con filtros
+- **Channel Detail**: Información detallada del canal + streams
+- **Player**: Reproductor de video integrado
+- **EPG Guide**: Guía de programación
+- **Favorites**: Canales favoritos del usuario
+- **Settings**: Configuraciones de la app
+
+### 2. **Capa de Lógica de Negocio (Backend/Services)**
+
+#### **Servicios Core**
+```
+├── ChannelService
+│   ├── getChannels()
+│   ├── getChannelById()
+│   ├── getChannelsByCountry()
+│   ├── getChannelsByCategory()
+│   └── searchChannels()
+├── StreamService
+│   ├── getStreamsForChannel()
+│   ├── validateStreamUrl()
+│   └── getStreamQuality()
+├── EPGService
+│   ├── getGuideForChannel()
+│   ├── getCurrentProgram()
+│   └── getSchedule()
+└── FilterService
+    ├── getCountries()
+    ├── getCategories()
+    ├── getLanguages()
+    └── getRegions()
+```
+
+#### **Servicios de Utilidad**
+```
+├── ApiService (HTTP client)
+├── CacheService (datos estáticos)
+├── ValidationService (streams)
+├── GeolocationService
+└── FavoriteService (localStorage)
+```
+
+### 3. **Capa de Datos**
+
+#### **Modelos de Datos**
+```typescript
+interface Channel {
+  id: string;
+  name: string;
+  alt_names: string[];
+  network: string | null;
+  owners: string[];
+  country: string;
+  subdivision: string | null;
+  city: string | null;
+  categories: string[];
+  is_nsfw: boolean;
+  launched: string | null;
+  closed: string | null;
+  replaced_by: string | null;
+  website: string | null;
+  logo: string;
+}
+
+interface Stream {
+  channel: string | null;
+  feed: string | null;
+  url: string;
+  referrer: string | null;
+  user_agent: string | null;
+  quality: string | null;
+}
+
+interface Filter {
+  countries: Country[];
+  categories: Category[];
+  languages: Language[];
+  regions: Region[];
+}
+```
+
+#### **Gestión de Estado**
+- **Redux/Zustand** para estado global
+- **React Query/SWR** para cache de datos del API
+- **LocalStorage** para favoritos y configuraciones
+
+### 4. **Funcionalidades por Módulo**
+
+#### **Módulo de Filtros**
+```
+Countries → Filtro principal geográfico
+├── Subdivisions → Filtro por estado/provincia
+├── Regions → Agrupaciones geográficas
+├── Categories → Tipo de contenido (news, sports, etc.)
+├── Languages → Idioma de transmisión
+└── NSFW Filter → Contenido para adultos
+```
+
+#### **Módulo de Canales**
+```
+Channel List → Vista principal
+├── Search → Búsqueda por nombre
+├── Sort → Ordenamiento (alfabético, país, categoría)
+├── Grid/List View → Diferentes vistas
+└── Favorites → Canales marcados como favoritos
+```
+
+#### **Módulo de Reproductor**
+```
+Stream Selection → Múltiples feeds por canal
+├── Quality Selection → Diferentes calidades disponibles
+├── Player Controls → Play/pause/volume/fullscreen
+├── Stream Validation → Verificar URLs activas
+└── Fallback Streams → Streams alternativos
+```
+
+#### **Módulo EPG (Guía)**
+```
+Program Guide → Programación actual/futura
+├── Timeline View → Vista de horarios
+├── Program Details → Información del programa
+├── Timezone Handling → Manejo de zonas horarias
+└── Guide Sources → Múltiples fuentes de EPG
+```
+
+### 5. **Arquitectura Técnica Recomendada**
+
+#### **Frontend Stack**
+- **React/Vue.js** + TypeScript
+- **Tailwind CSS** para estilos
+- **React Query** para manejo de datos
+- **Zustand/Redux** para estado global
+- **Video.js/Plyr** para reproductor
+
+#### **Backend/API Layer**
+- **Node.js + Express** o **Next.js API Routes**
+- **Axios/Fetch** para consumir APIs externas
+- **Redis** para cache de datos estáticos
+- **Rate Limiting** para controlar requests
+
+#### **Base de Datos/Cache**
+```
+├── Redis Cache
+│   ├── Countries (24h TTL)
+│   ├── Categories (24h TTL)
+│   ├── Languages (24h TTL)
+│   └── Channels (6h TTL)
+├── LocalStorage
+│   ├── User Favorites
+│   ├── Recent Channels
+│   └── App Settings
+└── IndexedDB (opcional)
+    └── Offline Channel Data
+```
+
+### 6. **Flujo de Datos Principal**
+
+```
+1. App Init → Load Countries/Categories/Languages
+2. User Selects Filters → Filter Channels
+3. Display Filtered Channels → Show Channel Grid
+4. User Selects Channel → Load Streams + EPG
+5. Stream Selection → Validate + Play
+6. EPG Integration → Show Current/Next Programs
+```
+
+### 7. **Características Adicionales**
+
+#### **UX/UI Features**
+- **Búsqueda en tiempo real** con debounce
+- **Filtros combinables** (múltiples países, categorías)
+- **Vista de cuadrícula/lista** intercambiable
+- **Favoritos persistentes**
+- **Historial de canales vistos**
+- **Modo oscuro/claro**
+
+#### **Funcionalidades Avanzadas**
+- **Geolocalización automática** para filtro por país
+- **Validación de streams en background**
+- **Sistema de recomendaciones** basado en favoritos
+- **Export/Import de favoritos**
+- **PWA** para uso offline limitado
+
+#### **Optimizaciones**
+- **Lazy loading** de imágenes de logos
+- **Virtual scrolling** para listas grandes
+- **Service Worker** para cache de assets
+- **Compression** de respuestas API
+- **CDN** para logos de canales
+
+### 8. **Consideraciones de Implementación**
+
+#### **Gestión de Errores**
+- Streams inactivos/rotos
+- APIs no disponibles  
+- Problemas de conectividad
+- Contenido geo-bloqueado
+
+#### **Performance**
+- Cache inteligente de datos estáticos
+- Paginación de canales
+- Optimización de imágenes
+- Debounce en búsquedas
+
+#### **Seguridad**
+- Validación de URLs de stream
+- Rate limiting
+- Sanitización de datos
+- Manejo de contenido NSFW
+
+Esta arquitectura aprovecha al máximo todas las entidades del API, creando una experiencia de usuario rica y funcional para consumir contenido IPTV de manera organizada y eficiente.
