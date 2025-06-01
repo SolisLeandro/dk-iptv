@@ -11,12 +11,9 @@ import { useTheme } from '../hooks/useTheme'
 import HomeScreen from '../screens/main/HomeScreen'
 import ExploreScreen from '../screens/main/ExploreScreen'
 import FavoritesScreen from '../screens/main/FavoritesScreen'
-import SearchScreen from '../screens/main/SearchScreen'
 import PlayerScreen from '../screens/player/PlayerScreen'
-import EPGScreen from '../screens/epg/EPGScreen'
 import SettingsScreen from '../screens/settings/SettingsScreen'
 import AboutScreen from '../screens/settings/AboutScreen'
-import OnboardingScreen from '../screens/auth/OnboardingScreen'
 
 const Stack = createStackNavigator()
 const Tab = createBottomTabNavigator()
@@ -124,14 +121,6 @@ function MainStackNavigator() {
                 options={{ headerShown: false }}
             />
             <Stack.Screen
-                name="Search"
-                component={SearchScreen}
-                options={{
-                    title: 'Buscar',
-                    presentation: 'modal'
-                }}
-            />
-            <Stack.Screen
                 name="Player"
                 component={PlayerScreen}
                 options={{
@@ -140,14 +129,9 @@ function MainStackNavigator() {
                 }}
             />
             <Stack.Screen
-                name="EPG"
-                component={EPGScreen}
-                options={{ title: 'Guía de Programación' }}
-            />
-            <Stack.Screen
                 name="About"
                 component={AboutScreen}
-                options={{ title: 'Acerca de' }}
+                options={{ headerShown: false }}
             />
         </Stack.Navigator>
     )

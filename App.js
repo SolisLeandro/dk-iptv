@@ -12,7 +12,6 @@ import { store, persistor } from './src/store'
 import AppNavigator from './src/navigation/AppNavigator'
 import { ThemeProvider } from './src/contexts/ThemeContext'
 import ErrorBoundary from './src/components/common/ErrorBoundary'
-import { NetworkProvider } from './src/contexts/NetworkContext'
 import LoadingSpinner from './src/components/common/LoadingSpinner'
 
 // Keep splash screen visible while we fetch resources
@@ -39,7 +38,7 @@ export default function App() {
         async function prepare() {
             try {
                 console.log('🚀 Iniciando preparación de la app...')
-                
+
                 // Pre-load fonts (solo si existen los archivos)
                 try {
                     await Font.loadAsync({
@@ -52,10 +51,7 @@ export default function App() {
                 } catch (fontError) {
                     console.warn("⚠️ Error cargando fuentes (continuando sin ellas):", fontError.message)
                 }
-                
-                // Delay artificial para ver que funciona
-                await new Promise(resolve => setTimeout(resolve, 1000))
-                
+
                 console.log("✅ App preparada correctamente")
             } catch (e) {
                 console.error('❌ Error preparando la app:', e)
@@ -91,11 +87,9 @@ export default function App() {
                     >
                         <QueryClientProvider client={queryClient}>
                             <ThemeProvider>
-                                <NetworkProvider>
-                                    <AppNavigator />
-                                    <StatusBar style="auto" />
-                                    <Toast />
-                                </NetworkProvider>
+                                <AppNavigator />
+                                <StatusBar style="auto" />
+                                <Toast />
                             </ThemeProvider>
                         </QueryClientProvider>
                     </PersistGate>

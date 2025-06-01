@@ -24,8 +24,8 @@ export const lightTheme = {
 
 export const darkTheme = {
     colors: {
-        primary: '#FF6B35',
-        secondary: '#4ECDC4',
+        primary: '#00c6cf',
+        secondary: '#ffae2b',
         accent: '#45B7D1',
         background: '#0D1117',    // GitHub dark bg
         surface: '#161B22',       // GitHub dark surface
@@ -38,8 +38,8 @@ export const darkTheme = {
         success: '#56D364',
         warning: '#E3B341',
         info: '#58A6FF',
-        gradient: ['#FF6B35', '#F7931E'],
-        gradientSecondary: ['#4ECDC4', '#44A08D'],
+        gradient: ['#264653', '#1D3557'], // azul profundo y gris azulado
+        gradientSecondary: ['#E63946', '#F1FAEE'], // rojo suave + blanco nieve
         overlay: 'rgba(0, 0, 0, 0.8)',
         ripple: 'rgba(255, 107, 53, 0.3)',
         shadow: 'rgba(0, 0, 0, 0.3)',

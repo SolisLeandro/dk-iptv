@@ -20,7 +20,7 @@ export default function ChannelCard({
     const { colors } = useTheme()
     const { isFavorite } = useFavorites()
     const { isFeatured } = useFeatured()
-    
+
     const isChannelFavorite = isFavorite(channel.id)
     const isChannelFeatured = isFeatured(channel.id)
 
@@ -36,8 +36,13 @@ export default function ChannelCard({
 
     const formatCategories = (categories) => {
         if (!categories || categories.length === 0) return 'General'
-        return categories.slice(0, 2).join(', ')
+        return categories
+            .slice(0, 2)
+            .map(cat => cat.charAt(0).toUpperCase() + cat.slice(1))
+            .join(', ')
     }
+
+
 
     return (
         <TouchableOpacity
@@ -47,25 +52,17 @@ export default function ChannelCard({
         >
             {/* Logo */}
             <View style={styles.logoContainer}>
-                {channel.logo ? (
-                    <Image
-                        source={{ uri: channel.logo }}
-                        style={styles.logo}
-                        resizeMode="contain"
-                    />
-                ) : (
-                    <View style={[styles.logoPlaceholder, { backgroundColor: colors.border }]}>
+                <View style={[styles.logoPlaceholder, { backgroundColor: colors.border }]}>
+                    {channel.logo ? (
+                        <Image
+                            source={{ uri: channel.logo }}
+                            style={styles.logo}
+                            resizeMode="contain"
+                        />
+                    ) : (
                         <Ionicons name="tv" size={24} color={colors.textMuted} />
-                    </View>
-                )}
-
-                {/* Live Indicator */}
-                {!channel.closed && (
-                    <View style={styles.liveIndicator}>
-                        <View style={styles.liveDot} />
-                        <Text style={styles.liveText}>LIVE</Text>
-                    </View>
-                )}
+                    )}
+                </View>
 
                 {/* Status Icons */}
                 <View style={styles.statusIcons}>
@@ -141,6 +138,7 @@ const styles = StyleSheet.create({
         height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
+        padding: 15
     },
     liveIndicator: {
         position: 'absolute',

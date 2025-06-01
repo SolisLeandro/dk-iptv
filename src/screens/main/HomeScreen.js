@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     RefreshControl,
     Platform,
+    Image,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
@@ -55,14 +56,17 @@ export default function HomeScreen({ navigation }) {
             {/* Header */}
             <LinearGradient
                 colors={colors.gradient}
-                style={[styles.header, { paddingTop: insets.top + 10 }]}
+                style={[styles.header, { paddingTop: insets.top }]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
             >
                 <View style={styles.headerTop}>
                     <View style={styles.logoContainer}>
-                        <Text style={styles.logoEmoji}>📺</Text>
-                        <Text style={styles.headerTitle}>Stream Master</Text>
+                        <Image
+                            source={require('../../../assets/images/DKiptvLogoTipo.png')}
+                            style={styles.logo}
+                            resizeMode="contain"
+                        />
                     </View>
                 </View>
 
@@ -116,17 +120,20 @@ const styles = StyleSheet.create({
     header: {
         minHeight: 140,
         paddingHorizontal: 20,
-        paddingBottom: 16,
+        paddingBottom: 8,
     },
     headerTop: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16,
     },
     logoContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+    },
+    logo: {
+        width: 130,
+        height: 60,
     },
     logoEmoji: {
         fontSize: 28,

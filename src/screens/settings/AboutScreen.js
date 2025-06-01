@@ -165,7 +165,7 @@ export default function AboutScreen({ navigation }) {
     )
 }
 
-const AboutScreenStyles = StyleSheet.create({
+const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
