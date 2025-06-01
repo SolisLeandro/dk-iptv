@@ -48,23 +48,33 @@ const channelsSlice = createSlice({
             const { country, category, language } = action.payload
             let filtered = [...state.list]
 
+            console.log('🔍 Aplicando filtros:', { country, category, language })
+            console.log('📊 Canales antes del filtro:', filtered.length)
+
             if (country) {
                 filtered = filtered.filter(channel => channel.country === country)
+                console.log(`🌍 Después del filtro por país (${country}):`, filtered.length)
             }
+
             if (category) {
                 filtered = filtered.filter(channel =>
                     channel.categories?.includes(category)
                 )
+                console.log(`📺 Después del filtro por categoría (${category}):`, filtered.length)
             }
+
             if (language) {
-                // Filtrar por idioma (necesitaríamos datos de feeds para esto)
-                // Por ahora dejamos la lógica preparada
+                // Para el filtro de idioma necesitaríamos datos de feeds/streams
+                // Por ahora lo dejamos preparado
+                console.log(`🗣️ Filtro por idioma (${language}) - no implementado aún`)
             }
 
             state.filteredList = filtered
+            console.log('✅ Canales filtrados final:', filtered.length)
         },
         clearFilters: (state) => {
-            state.filteredList = state.list
+            console.log('🧹 Limpiando filtros')
+            state.filteredList = []
         },
     },
     extraReducers: (builder) => {
@@ -76,7 +86,11 @@ const channelsSlice = createSlice({
             .addCase(fetchChannels.fulfilled, (state, action) => {
                 state.loading = false
                 state.list = action.payload
-                state.filteredList = action.payload
+                // Si no hay filtros activos, limpiar la lista filtrada
+                if (state.filteredList.length === 0) {
+                    state.filteredList = []
+                }
+                console.log('📡 Canales cargados:', action.payload.length)
             })
             .addCase(fetchChannels.rejected, (state, action) => {
                 state.loading = false
@@ -96,4 +110,3 @@ export const {
 } = channelsSlice.actions
 
 export default channelsSlice.reducer
-

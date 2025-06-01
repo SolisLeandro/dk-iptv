@@ -18,12 +18,14 @@ import { useChannels } from '../../hooks/useChannels'
 import ChannelGrid from '../../components/channel/ChannelGrid'
 import FilterDrawer from '../../components/filters/FilterDrawer'
 import SearchBar from '../../components/channel/ChannelSearch'
+import { useFilters } from '../../hooks/useFilters'
 
 const { width } = Dimensions.get('window')
 
 export default function ExploreScreen({ navigation }) {
     const { colors } = useTheme()
-    const { channels, isLoading, refetch } = useChannels()
+    const { hasActiveFilters, filteredCount, totalChannels, channels, isLoading, refetch } = useChannels()
+    const { selectedCountry, selectedCategory } = useFilters()
     const insets = useSafeAreaInsets()
 
     const [showFilters, setShowFilters] = useState(false)
@@ -87,8 +89,15 @@ export default function ExploreScreen({ navigation }) {
             <View style={styles.content}>
                 <View style={styles.channelsSection}>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                        🌍 Todos los Canales ({channels.length})
+                        🌍 {hasActiveFilters ? 'Canales Filtrados' : 'Todos los Canales'} ({filteredCount}/{totalChannels})
                     </Text>
+                    {hasActiveFilters && (
+                        <View style={styles.filterInfo}>
+                            <Text style={[styles.filterInfoText, { color: colors.textSecondary }]}>
+                                Filtros activos: {selectedCountry && '🌍'} {selectedCategory && '📺'}
+                            </Text>
+                        </View>
+                    )}
                     <ChannelGrid
                         channels={channels}
                         searchQuery={searchQuery}
@@ -188,5 +197,12 @@ const styles = StyleSheet.create({
         bottom: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         zIndex: 999,
+    },
+    filterInfo: {
+        marginBottom: 12,
+    },
+    filterInfoText: {
+        fontSize: 14,
+        fontStyle: 'italic',
     },
 })

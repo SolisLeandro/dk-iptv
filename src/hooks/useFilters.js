@@ -14,19 +14,39 @@ export const useFilters = () => {
     const dispatch = useDispatch()
     const filters = useSelector(state => state.filters)
 
-    // Query para obtener filtros
-    const { data: filtersData, isLoading } = useQuery({
-        queryKey: ['filters'],
-        queryFn: filtersService.getAllFilters,
-        staleTime: 60 * 60 * 1000, // 1 hora (los filtros no cambian frecuentemente)
+    // Query para obtener países
+    const { data: countriesData, isLoading: countriesLoading } = useQuery({
+        queryKey: ['countries'],
+        queryFn: filtersService.getCountries,
+        staleTime: 60 * 60 * 1000, // 1 hora
+    })
+
+    // Query para obtener categorías
+    const { data: categoriesData, isLoading: categoriesLoading } = useQuery({
+        queryKey: ['categories'],
+        queryFn: filtersService.getCategories,
+        staleTime: 60 * 60 * 1000, // 1 hora
+    })
+
+    // Query para obtener idiomas
+    const { data: languagesData, isLoading: languagesLoading } = useQuery({
+        queryKey: ['languages'],
+        queryFn: filtersService.getLanguages,
+        staleTime: 60 * 60 * 1000, // 1 hora
     })
 
     // Sincronizar con Redux cuando lleguen los datos
     useEffect(() => {
-        if (filtersData) {
+        if (countriesData && categoriesData && languagesData) {
+            const filtersData = {
+                countries: countriesData,
+                categories: categoriesData,
+                languages: languagesData,
+                regions: [] // No lo usamos por ahora
+            }
             dispatch(fetchFilters.fulfilled(filtersData))
         }
-    }, [filtersData, dispatch])
+    }, [countriesData, categoriesData, languagesData, dispatch])
 
     const setCountry = (country) => {
         dispatch(setSelectedCountry(country))
@@ -46,11 +66,10 @@ export const useFilters = () => {
 
     return {
         ...filters,
-        isLoading,
+        isLoading: countriesLoading || categoriesLoading || languagesLoading,
         setCountry,
         setCategory,
         setLanguage,
         clearFilters: resetFilters,
     }
 }
-

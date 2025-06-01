@@ -47,19 +47,33 @@ export const useChannels = () => {
 
     // Aplicar filtros cuando cambien
     useEffect(() => {
-        if (selectedCountry || selectedCategory || selectedLanguage) {
-            dispatch(filterChannels({
-                country: selectedCountry,
-                category: selectedCategory,
-                language: selectedLanguage,
-            }))
-        } else {
-            dispatch(clearFilters())
+        if (list.length > 0) {
+            if (selectedCountry || selectedCategory || selectedLanguage) {
+                dispatch(filterChannels({
+                    country: selectedCountry,
+                    category: selectedCategory,
+                    language: selectedLanguage,
+                }))
+            } else {
+                dispatch(clearFilters())
+            }
         }
-    }, [selectedCountry, selectedCategory, selectedLanguage, dispatch])
+    }, [selectedCountry, selectedCategory, selectedLanguage, dispatch, list])
+
+    // Determinar qué canales mostrar
+    const getDisplayChannels = () => {
+        // Si hay filtros activos, usar la lista filtrada
+        if (selectedCountry || selectedCategory || selectedLanguage) {
+            return filteredList
+        }
+        // Si no hay filtros, usar la lista completa
+        return list
+    }
+
+    const displayChannels = getDisplayChannels()
 
     return {
-        channels: filteredList.length > 0 ? filteredList : list,
+        channels: displayChannels,
         allChannels: list,
         filteredChannels: filteredList,
         searchResults,
@@ -67,8 +81,8 @@ export const useChannels = () => {
         error: error || queryError?.message,
         searchQuery,
         refetch,
+        hasActiveFilters: !!(selectedCountry || selectedCategory || selectedLanguage),
+        totalChannels: list.length,
+        filteredCount: displayChannels.length,
     }
 }
-
-
-
