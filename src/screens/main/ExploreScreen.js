@@ -1,173 +1,132 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import {
     View,
     Text,
     StyleSheet,
-    ScrollView,
     TouchableOpacity,
-    FlatList,
+    Animated,
+    Dimensions,
+    RefreshControl,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import * as Haptics from 'expo-haptics'
 
 import { useTheme } from '../../hooks/useTheme'
 import { useChannels } from '../../hooks/useChannels'
-import { useFilters } from '../../hooks/useFilters'
-import ChannelCard from '../../components/channel/ChannelCard'
+import ChannelGrid from '../../components/channel/ChannelGrid'
+import FilterDrawer from '../../components/filters/FilterDrawer'
+import SearchBar from '../../components/channel/ChannelSearch'
+
+const { width } = Dimensions.get('window')
 
 export default function ExploreScreen({ navigation }) {
     const { colors } = useTheme()
-    const { channels } = useChannels()
-    const { countries, categories } = useFilters()
-    const [selectedFilter, setSelectedFilter] = useState('all')
+    const { channels, isLoading, refetch } = useChannels()
+    const insets = useSafeAreaInsets()
 
-    const filterOptions = [
-        { id: 'all', label: 'Todos', icon: 'grid' },
-        { id: 'popular', label: 'Populares', icon: 'trending-up' },
-        { id: 'new', label: 'Nuevos', icon: 'star' },
-        { id: 'live', label: 'En Vivo', icon: 'radio' },
-    ]
+    const [showFilters, setShowFilters] = useState(false)
+    const [refreshing, setRefreshing] = useState(false)
+    const [searchQuery, setSearchQuery] = useState('')
 
-    const getFilteredChannels = () => {
-        switch (selectedFilter) {
-            case 'popular':
-                return channels.filter(ch => ch.categories?.includes('general')).slice(0, 20)
-            case 'new':
-                return channels.filter(ch => {
-                    const launched = new Date(ch.launched)
-                    const now = new Date()
-                    const diffTime = Math.abs(now - launched)
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-                    return diffDays < 365 // Último año
-                })
-            case 'live':
-                return channels.filter(ch => !ch.closed)
-            default:
-                return channels
-        }
+    const slideAnim = useRef(new Animated.Value(-width)).current
+
+    const toggleFilters = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+
+        setShowFilters(!showFilters)
+        Animated.spring(slideAnim, {
+            toValue: showFilters ? -width : 0,
+            friction: 8,
+            tension: 100,
+            useNativeDriver: true,
+        }).start()
     }
 
-    const renderChannelItem = ({ item }) => (
-        <ChannelCard
-            channel={item}
-            onPress={() => navigation.navigate('Player', { channel: item })}
-            style={styles.channelCard}
-        />
-    )
+    const onRefresh = async () => {
+        setRefreshing(true)
+        await refetch()
+        setRefreshing(false)
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+    }
+
+    const handleSearch = (query) => {
+        setSearchQuery(query)
+    }
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             {/* Header */}
             <LinearGradient
                 colors={colors.gradient}
-                style={styles.header}
+                style={[styles.header, { paddingTop: insets.top + 10 }]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
             >
-                <View style={styles.headerContent}>
+                <View style={styles.headerTop}>
                     <Text style={styles.headerTitle}>🔍 Explorar</Text>
                     <TouchableOpacity
-                        style={styles.settingsButton}
-                        onPress={() => navigation.navigate('Settings')}
+                        onPress={toggleFilters}
+                        style={[styles.filterButton, { backgroundColor: colors.overlay }]}
+                        activeOpacity={0.8}
                     >
-                        <Ionicons name="settings" size={24} color="#FFFFFF" />
+                        <Ionicons name="options" size={24} color="#FFFFFF" />
                     </TouchableOpacity>
                 </View>
+
+                {/* Búsqueda */}
+                <SearchBar
+                    value={searchQuery}
+                    onChangeText={handleSearch}
+                    placeholder="Buscar canales..."
+                    style={styles.searchBar}
+                />
             </LinearGradient>
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                {/* Filtros */}
-                <View style={styles.filtersSection}>
+            <View style={styles.content}>
+                <View style={styles.channelsSection}>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                        Filtrar por
+                        🌍 Todos los Canales ({channels.length})
                     </Text>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={styles.filtersScroll}
-                    >
-                        {filterOptions.map((filter) => (
-                            <TouchableOpacity
-                                key={filter.id}
-                                style={[
-                                    styles.filterChip,
-                                    {
-                                        backgroundColor: selectedFilter === filter.id
-                                            ? colors.primary
-                                            : colors.surface,
-                                    }
-                                ]}
-                                onPress={() => setSelectedFilter(filter.id)}
-                            >
-                                <Ionicons
-                                    name={filter.icon}
-                                    size={18}
-                                    color={selectedFilter === filter.id ? '#FFFFFF' : colors.text}
-                                    style={styles.filterIcon}
-                                />
-                                <Text
-                                    style={[
-                                        styles.filterText,
-                                        {
-                                            color: selectedFilter === filter.id
-                                                ? '#FFFFFF'
-                                                : colors.text
-                                        }
-                                    ]}
-                                >
-                                    {filter.label}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-
-                {/* Categorías Populares */}
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                        📺 Categorías Populares
-                    </Text>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={styles.categoriesScroll}
-                    >
-                        {categories.slice(0, 10).map((category) => (
-                            <TouchableOpacity
-                                key={category.id}
-                                style={[styles.categoryCard, { backgroundColor: colors.surface }]}
-                                onPress={() => {
-                                    // Navegar a canales filtrados por categoría
-                                    navigation.navigate('CategoryChannels', { category })
-                                }}
-                            >
-                                <Text style={[styles.categoryName, { color: colors.text }]}>
-                                    {category.name}
-                                </Text>
-                                <Text style={[styles.categoryCount, { color: colors.textSecondary }]}>
-                                    {channels.filter(ch => ch.categories?.includes(category.id)).length} canales
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-
-                {/* Lista de Canales */}
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                        {filterOptions.find(f => f.id === selectedFilter)?.label} Canales
-                    </Text>
-                    <FlatList
-                        data={getFilteredChannels()}
-                        renderItem={renderChannelItem}
-                        keyExtractor={(item) => item.id}
-                        numColumns={2}
-                        columnWrapperStyle={styles.row}
-                        scrollEnabled={false}
-                        showsVerticalScrollIndicator={false}
+                    <ChannelGrid
+                        channels={channels}
+                        searchQuery={searchQuery}
+                        onChannelPress={(channel) => navigation.navigate('Player', { channel })}
+                        loading={isLoading}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={refreshing}
+                                onRefresh={onRefresh}
+                                colors={[colors.primary]}
+                                tintColor={colors.primary}
+                            />
+                        }
                     />
                 </View>
-            </ScrollView>
+            </View>
+
+            {/* Drawer de Filtros */}
+            <Animated.View
+                style={[
+                    styles.filterDrawer,
+                    {
+                        transform: [{ translateX: slideAnim }],
+                        backgroundColor: colors.surface,
+                    },
+                ]}
+            >
+                <FilterDrawer onClose={toggleFilters} />
+            </Animated.View>
+
+            {/* Overlay */}
+            {showFilters && (
+                <TouchableOpacity
+                    style={styles.overlay}
+                    onPress={toggleFilters}
+                    activeOpacity={1}
+                />
+            )}
         </View>
     )
 }
@@ -177,81 +136,57 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        height: 120,
-        paddingTop: 50,
-        justifyContent: 'center',
+        minHeight: 140,
+        paddingHorizontal: 20,
+        paddingBottom: 16,
     },
-    headerContent: {
+    headerTop: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20,
+        marginBottom: 16,
     },
     headerTitle: {
         fontSize: 24,
         fontWeight: '800',
         color: '#FFFFFF',
     },
-    settingsButton: {
-        padding: 8,
+    filterButton: {
+        padding: 12,
         borderRadius: 20,
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
     },
+    searchBar: {
+        marginTop: 8,
+    },
     content: {
         flex: 1,
-        padding: 20,
+        paddingTop: 25
     },
-    section: {
-        marginBottom: 24,
+    channelsSection: {
+        paddingHorizontal: 20,
+        flex: 1,
     },
     sectionTitle: {
-        fontSize: 18,
-        fontWeight: '600',
+        fontSize: 20,
+        fontWeight: '700',
         marginBottom: 12,
     },
-    filtersSection: {
-        marginBottom: 24,
+    filterDrawer: {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: width * 0.85,
+        zIndex: 1000,
     },
-    filtersScroll: {
-        marginBottom: 8,
-    },
-    filterChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
-        marginRight: 12,
-    },
-    filterIcon: {
-        marginRight: 6,
-    },
-    filterText: {
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    categoriesScroll: {
-        marginBottom: 8,
-    },
-    categoryCard: {
-        padding: 16,
-        borderRadius: 12,
-        marginRight: 12,
-        width: 120,
-    },
-    categoryName: {
-        fontSize: 14,
-        fontWeight: '600',
-        marginBottom: 4,
-    },
-    categoryCount: {
-        fontSize: 12,
-    },
-    row: {
-        justifyContent: 'space-between',
-    },
-    channelCard: {
-        width: '48%',
-        marginBottom: 16,
+    overlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        zIndex: 999,
     },
 })

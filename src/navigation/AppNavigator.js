@@ -11,7 +11,6 @@ import { useTheme } from '../hooks/useTheme'
 import HomeScreen from '../screens/main/HomeScreen'
 import ExploreScreen from '../screens/main/ExploreScreen'
 import FavoritesScreen from '../screens/main/FavoritesScreen'
-import RecentScreen from '../screens/main/RecentScreen'
 import SearchScreen from '../screens/main/SearchScreen'
 import PlayerScreen from '../screens/player/PlayerScreen'
 import EPGScreen from '../screens/epg/EPGScreen'
@@ -70,8 +69,8 @@ function TabNavigator() {
                         case 'Favorites':
                             iconName = focused ? 'heart' : 'heart-outline'
                             break
-                        case 'Recent':
-                            iconName = focused ? 'time' : 'time-outline'
+                        case 'Settings':
+                            iconName = focused ? 'settings' : 'settings-outline'
                             break
                     }
 
@@ -95,9 +94,9 @@ function TabNavigator() {
                 options={{ tabBarLabel: 'Favoritos' }}
             />
             <Tab.Screen
-                name="Recent"
-                component={RecentScreen}
-                options={{ tabBarLabel: 'Recientes' }}
+                name="Settings"
+                component={SettingsScreen}
+                options={{ tabBarLabel: 'Configuración' }}
             />
         </Tab.Navigator>
     )
@@ -144,11 +143,6 @@ function MainStackNavigator() {
                 name="EPG"
                 component={EPGScreen}
                 options={{ title: 'Guía de Programación' }}
-            />
-            <Stack.Screen
-                name="Settings"
-                component={SettingsScreen}
-                options={{ headerShown: false }}
             />
             <Stack.Screen
                 name="About"

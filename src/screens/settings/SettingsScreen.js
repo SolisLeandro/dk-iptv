@@ -9,6 +9,7 @@ import {
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Haptics from 'expo-haptics'
 
 import { useTheme } from '../../hooks/useTheme'
@@ -46,7 +47,8 @@ const SettingsOption = ({ icon, title, subtitle, onPress, rightElement }) => {
 }
 
 export default function SettingsScreen({ navigation }) {
-    const { colors, isDark } = useTheme()
+    const { colors } = useTheme()
+    const insets = useSafeAreaInsets()
 
     const handleAbout = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
@@ -76,19 +78,12 @@ export default function SettingsScreen({ navigation }) {
             {/* Header */}
             <LinearGradient
                 colors={colors.gradient}
-                style={styles.header}
+                style={[styles.header, { paddingTop: insets.top + 10 }]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
             >
                 <View style={styles.headerContent}>
-                    <TouchableOpacity
-                        style={styles.backButton}
-                        onPress={() => navigation.goBack()}
-                    >
-                        <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-                    </TouchableOpacity>
                     <Text style={styles.headerTitle}>⚙️ Configuración</Text>
-                    <View style={styles.placeholder} />
                 </View>
             </LinearGradient>
 
@@ -114,7 +109,7 @@ export default function SettingsScreen({ navigation }) {
                         icon="videocam"
                         title="Calidad por defecto"
                         subtitle="Auto (recomendado)"
-                        onPress={() => navigation.navigate('QualitySettings')}
+                        onPress={() => {}}
                     />
 
                     <SettingsOption
@@ -160,27 +155,6 @@ export default function SettingsScreen({ navigation }) {
                     />
                 </View>
 
-                {/* Sección de Privacidad */}
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                        🔒 Privacidad
-                    </Text>
-
-                    <SettingsOption
-                        icon="analytics"
-                        title="Análisis de uso"
-                        subtitle="Ayudar a mejorar la aplicación"
-                        rightElement={<Switch value={false} />}
-                    />
-
-                    <SettingsOption
-                        icon="eye-off"
-                        title="Modo privado"
-                        subtitle="No guardar historial de reproducción"
-                        rightElement={<Switch value={false} />}
-                    />
-                </View>
-
                 {/* Sección de Información */}
                 <View style={styles.section}>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -192,20 +166,6 @@ export default function SettingsScreen({ navigation }) {
                         title="Acerca de"
                         subtitle="Versión 1.0.0"
                         onPress={handleAbout}
-                    />
-
-                    <SettingsOption
-                        icon="help-circle"
-                        title="Ayuda y soporte"
-                        subtitle="Obtener ayuda"
-                        onPress={() => navigation.navigate('Help')}
-                    />
-
-                    <SettingsOption
-                        icon="document-text"
-                        title="Términos y privacidad"
-                        subtitle="Políticas de la aplicación"
-                        onPress={() => navigation.navigate('Privacy')}
                     />
                 </View>
 
@@ -243,29 +203,18 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        height: 120,
-        paddingTop: 50,
-        justifyContent: 'center',
+        minHeight: 100,
+        paddingHorizontal: 20,
+        paddingBottom: 16,
+        justifyContent: 'flex-end',
     },
     headerContent: {
-        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-    },
-    backButton: {
-        padding: 8,
-        borderRadius: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
     },
     headerTitle: {
-        fontSize: 20,
-        fontWeight: '700',
+        fontSize: 24,
+        fontWeight: '800',
         color: '#FFFFFF',
-        fontFamily: 'Inter-Bold',
-    },
-    placeholder: {
-        width: 40,
     },
     content: {
         flex: 1,
@@ -281,7 +230,6 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
         marginBottom: 16,
-        fontFamily: 'Inter-SemiBold',
     },
     card: {
         padding: 16,
@@ -313,11 +261,9 @@ const styles = StyleSheet.create({
     optionTitle: {
         fontSize: 16,
         fontWeight: '500',
-        fontFamily: 'Inter-Medium',
     },
     optionSubtitle: {
         fontSize: 14,
         marginTop: 2,
-        fontFamily: 'Inter-Regular',
     },
 })

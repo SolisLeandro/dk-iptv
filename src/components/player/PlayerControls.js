@@ -4,84 +4,15 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    PanGestureHandler,
-    Dimensions,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
+import Toast from 'react-native-toast-message'
 
 import { useTheme } from '../../hooks/useTheme'
-
-const { width } = Dimensions.get('window')
-
-// Componente de slider personalizado simple
-const CustomSlider = ({ 
-    value = 0, 
-    minimumValue = 0, 
-    maximumValue = 1, 
-    onValueChange,
-    minimumTrackTintColor = '#FF6B35',
-    maximumTrackTintColor = 'rgba(255,255,255,0.3)',
-    style 
-}) => {
-    const [isDragging, setIsDragging] = useState(false)
-    const [sliderWidth, setSliderWidth] = useState(0)
-
-    const handleLayout = (event) => {
-        setSliderWidth(event.nativeEvent.layout.width - 20) // 20 for thumb size
-    }
-
-    const handleTouch = (event) => {
-        if (sliderWidth === 0) return
-
-        const touchX = event.nativeEvent.locationX - 10 // 10 for thumb radius
-        const percentage = Math.max(0, Math.min(1, touchX / sliderWidth))
-        const newValue = minimumValue + (percentage * (maximumValue - minimumValue))
-        
-        onValueChange?.(newValue)
-        Haptics.selectionAsync()
-    }
-
-    const progressPercentage = maximumValue > minimumValue 
-        ? (value - minimumValue) / (maximumValue - minimumValue) 
-        : 0
-
-    return (
-        <TouchableOpacity
-            style={[styles.sliderContainer, style]}
-            onLayout={handleLayout}
-            onPress={handleTouch}
-            activeOpacity={0.8}
-        >
-            <View style={styles.sliderTrack}>
-                {/* Background track */}
-                <View style={[
-                    styles.sliderTrackBackground,
-                    { backgroundColor: maximumTrackTintColor }
-                ]} />
-                
-                {/* Progress track */}
-                <View style={[
-                    styles.sliderTrackProgress,
-                    { 
-                        backgroundColor: minimumTrackTintColor,
-                        width: `${progressPercentage * 100}%`
-                    }
-                ]} />
-                
-                {/* Thumb */}
-                <View style={[
-                    styles.sliderThumb,
-                    {
-                        left: `${progressPercentage * 100}%`,
-                        backgroundColor: '#FFFFFF'
-                    }
-                ]} />
-            </View>
-        </TouchableOpacity>
-    )
-}
+import { useFavorites } from '../../hooks/useFavorites'
+import { useFeatured } from '../../hooks/useFeatured'
 
 export default function PlayerControls({
     player,
@@ -90,27 +21,15 @@ export default function PlayerControls({
     isFullscreen,
     channel,
     onPlayPause,
-    showProgressBar = false, // Cambiado a false por defecto para streams en vivo
+    showProgressBar = false,
 }) {
     const { colors } = useTheme()
-    const [isSeeking, setIsSeeking] = useState(false)
+    const { isFavorite, toggleFavorite } = useFavorites()
+    const { isFeatured, toggleFeatured } = useFeatured()
 
     const isPlaying = player?.playing || false
-    const position = player?.currentTime || 0
-    const duration = player?.duration || 0
-    const progress = duration > 0 ? position / duration : 0
-
-    const formatTime = (timeSeconds) => {
-        const totalSeconds = Math.floor(timeSeconds)
-        const hours = Math.floor(totalSeconds / 3600)
-        const minutes = Math.floor((totalSeconds % 3600) / 60)
-        const seconds = totalSeconds % 60
-
-        if (hours > 0) {
-            return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
-        }
-        return `${minutes}:${seconds.toString().padStart(2, '0')}`
-    }
+    const isChannelFavorite = isFavorite(channel.id)
+    const isChannelFeatured = isFeatured(channel.id)
 
     const handlePlayPause = () => {
         try {
@@ -126,23 +45,28 @@ export default function PlayerControls({
         }
     }
 
-    const handleSeek = (value) => {
-        try {
-            const seekTime = value * duration
-            player.currentTime = seekTime
-        } catch (error) {
-            console.error('Error seeking:', error)
-        }
+    const handleToggleFavorite = () => {
+        toggleFavorite(channel)
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+        
+        Toast.show({
+            type: 'success',
+            text1: isChannelFavorite ? 'Eliminado de favoritos' : 'Agregado a favoritos',
+            text2: channel.name,
+            position: 'bottom',
+        })
     }
 
-    const handleSkip = (seconds) => {
-        try {
-            const newPosition = Math.max(0, Math.min(duration, position + seconds))
-            player.currentTime = newPosition
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-        } catch (error) {
-            console.error('Error skipping:', error)
-        }
+    const handleToggleFeatured = () => {
+        toggleFeatured(channel)
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+        
+        Toast.show({
+            type: 'success',
+            text1: isChannelFeatured ? 'Eliminado de destacados' : 'Agregado a destacados',
+            text2: channel.name,
+            position: 'bottom',
+        })
     }
 
     return (
@@ -186,17 +110,6 @@ export default function PlayerControls({
 
                 {/* Center Controls */}
                 <View style={styles.centerControls}>
-                    {duration > 0 && (
-                        <TouchableOpacity
-                            style={styles.skipButton}
-                            onPress={() => handleSkip(-10)}
-                            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-                        >
-                            <Ionicons name="play-back" size={32} color="#FFFFFF" />
-                            <Text style={styles.skipText}>10s</Text>
-                        </TouchableOpacity>
-                    )}
-
                     <TouchableOpacity
                         style={styles.playButton}
                         onPress={handlePlayPause}
@@ -210,51 +123,47 @@ export default function PlayerControls({
                             />
                         </View>
                     </TouchableOpacity>
-
-                    {duration > 0 && (
-                        <TouchableOpacity
-                            style={styles.skipButton}
-                            onPress={() => handleSkip(10)}
-                            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-                        >
-                            <Ionicons name="play-forward" size={32} color="#FFFFFF" />
-                            <Text style={styles.skipText}>10s</Text>
-                        </TouchableOpacity>
-                    )}
                 </View>
 
                 {/* Bottom Controls */}
-                {showProgressBar && duration > 0 && (
-                    <View style={styles.bottomControls}>
-                        <Text style={styles.timeText}>
-                            {formatTime(position)}
-                        </Text>
-
-                        <View style={styles.progressContainer}>
-                            <CustomSlider
-                                style={styles.progressSlider}
-                                value={progress}
-                                minimumValue={0}
-                                maximumValue={1}
-                                minimumTrackTintColor={colors.primary}
-                                maximumTrackTintColor="rgba(255,255,255,0.3)"
-                                onValueChange={handleSeek}
+                <View style={styles.bottomControls}>
+                    {/* Action Buttons */}
+                    <View style={styles.actionButtons}>
+                        <TouchableOpacity
+                            style={[styles.actionButton, { backgroundColor: isChannelFavorite ? '#FF1744' : 'rgba(255, 255, 255, 0.2)' }]}
+                            onPress={handleToggleFavorite}
+                        >
+                            <Ionicons
+                                name={isChannelFavorite ? "heart" : "heart-outline"}
+                                size={20}
+                                color="#FFFFFF"
                             />
-                        </View>
+                            <Text style={styles.actionButtonText}>
+                                {isChannelFavorite ? 'Favorito' : 'Favorito'}
+                            </Text>
+                        </TouchableOpacity>
 
-                        <Text style={styles.timeText}>
-                            {formatTime(duration)}
-                        </Text>
+                        <TouchableOpacity
+                            style={[styles.actionButton, { backgroundColor: isChannelFeatured ? '#FF6B35' : 'rgba(255, 255, 255, 0.2)' }]}
+                            onPress={handleToggleFeatured}
+                        >
+                            <Ionicons
+                                name={isChannelFeatured ? "flame" : "flame-outline"}
+                                size={20}
+                                color="#FFFFFF"
+                            />
+                            <Text style={styles.actionButtonText}>
+                                {isChannelFeatured ? 'Destacado' : 'Destacado'}
+                            </Text>
+                        </TouchableOpacity>
                     </View>
-                )}
 
-                {/* Live Indicator */}
-                {!showProgressBar && (
+                    {/* Live Indicator */}
                     <View style={styles.liveIndicator}>
                         <View style={styles.liveDot} />
                         <Text style={styles.liveText}>EN VIVO</Text>
                     </View>
-                )}
+                </View>
             </LinearGradient>
         </View>
     )
@@ -301,20 +210,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.3)',
     },
     centerControls: {
-        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 40,
-    },
-    skipButton: {
-        alignItems: 'center',
-        padding: 8,
-    },
-    skipText: {
-        fontSize: 10,
-        color: '#FFFFFF',
-        marginTop: 4,
-        fontWeight: '500',
     },
     playButton: {
         padding: 8,
@@ -330,22 +227,25 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(255, 255, 255, 0.3)',
     },
     bottomControls: {
-        flexDirection: 'row',
         alignItems: 'center',
+        gap: 16,
+    },
+    actionButtons: {
+        flexDirection: 'row',
         gap: 12,
     },
-    timeText: {
-        fontSize: 12,
+    actionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        gap: 6,
+    },
+    actionButtonText: {
         color: '#FFFFFF',
-        fontWeight: '500',
-        minWidth: 40,
-        textAlign: 'center',
-    },
-    progressContainer: {
-        flex: 1,
-    },
-    progressSlider: {
-        height: 40,
+        fontSize: 14,
+        fontWeight: '600',
     },
     liveIndicator: {
         flexDirection: 'row',
@@ -355,7 +255,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 16,
-        alignSelf: 'center',
     },
     liveDot: {
         width: 8,
@@ -368,39 +267,5 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 12,
         fontWeight: '700',
-    },
-    // Estilos para el slider personalizado
-    sliderContainer: {
-        height: 40,
-        justifyContent: 'center',
-        paddingHorizontal: 10,
-    },
-    sliderTrack: {
-        height: 4,
-        position: 'relative',
-    },
-    sliderTrackBackground: {
-        height: 4,
-        borderRadius: 2,
-        position: 'absolute',
-        width: '100%',
-    },
-    sliderTrackProgress: {
-        height: 4,
-        borderRadius: 2,
-        position: 'absolute',
-    },
-    sliderThumb: {
-        width: 16,
-        height: 16,
-        borderRadius: 8,
-        position: 'absolute',
-        top: -6,
-        marginLeft: -8,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
     },
 })

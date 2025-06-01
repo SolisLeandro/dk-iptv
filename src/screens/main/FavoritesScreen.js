@@ -3,22 +3,25 @@ import {
     View,
     Text,
     StyleSheet,
-    FlatList,
     TouchableOpacity,
     Alert,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useTheme } from '../../hooks/useTheme'
 import { useFavorites } from '../../hooks/useFavorites'
-import ChannelCard from '../../components/channel/ChannelCard'
+import ChannelGrid from '../../components/channel/ChannelGrid'
+import SearchBar from '../../components/channel/ChannelSearch'
 import EmptyState from '../../components/common/EmptyState'
 
 export default function FavoritesScreen({ navigation }) {
     const { colors } = useTheme()
     const { favorites, toggleFavorite } = useFavorites()
-    const [sortBy, setSortBy] = useState('name') // 'name', 'recent', 'category'
+    const insets = useSafeAreaInsets()
+    const [sortBy, setSortBy] = useState('recent') // recent por defecto
+    const [searchQuery, setSearchQuery] = useState('')
 
     const getSortedFavorites = () => {
         const sorted = [...favorites]
@@ -28,16 +31,21 @@ export default function FavoritesScreen({ navigation }) {
                 return sorted.sort((a, b) => a.name.localeCompare(b.name))
             case 'recent':
                 return sorted.sort((a, b) => new Date(b.addedAt || 0) - new Date(a.addedAt || 0))
-            case 'category':
-                return sorted.sort((a, b) => {
-                    const catA = a.categories?.[0] || ''
-                    const catB = b.categories?.[0] || ''
-                    return catA.localeCompare(catB)
-                })
             default:
                 return sorted
         }
     }
+
+    const filteredFavorites = getSortedFavorites().filter(channel => {
+        if (!searchQuery) return true
+        const query = searchQuery.toLowerCase()
+        return (
+            channel.name.toLowerCase().includes(query) ||
+            channel.country.toLowerCase().includes(query) ||
+            channel.categories?.some(cat => cat.toLowerCase().includes(query)) ||
+            channel.alt_names?.some(name => name.toLowerCase().includes(query))
+        )
+    })
 
     const handleClearFavorites = () => {
         Alert.alert(
@@ -56,15 +64,9 @@ export default function FavoritesScreen({ navigation }) {
         )
     }
 
-    const renderFavoriteItem = ({ item }) => (
-        <ChannelCard
-            channel={item}
-            onPress={() => navigation.navigate('Player', { channel: item })}
-            onFavoritePress={() => toggleFavorite(item)}
-            isFavorite={true}
-            style={styles.favoriteCard}
-        />
-    )
+    const handleSearch = (query) => {
+        setSearchQuery(query)
+    }
 
     const renderSortOption = (option, label, icon) => (
         <TouchableOpacity
@@ -98,7 +100,7 @@ export default function FavoritesScreen({ navigation }) {
                 {/* Header */}
                 <LinearGradient
                     colors={colors.gradient}
-                    style={styles.header}
+                    style={[styles.header, { paddingTop: insets.top + 10 }]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                 >
@@ -110,7 +112,7 @@ export default function FavoritesScreen({ navigation }) {
                 <EmptyState
                     icon="heart-outline"
                     title="Sin favoritos"
-                    message="Aún no tienes canales favoritos. Toca el corazón en cualquier canal para agregarlo aquí."
+                    message="Aún no tienes canales favoritos. Ve al reproductor para agregar canales a esta sección."
                     actionText="Explorar Canales"
                     onAction={() => navigation.navigate('Explore')}
                 />
@@ -123,7 +125,7 @@ export default function FavoritesScreen({ navigation }) {
             {/* Header */}
             <LinearGradient
                 colors={colors.gradient}
-                style={styles.header}
+                style={[styles.header, { paddingTop: insets.top + 10 }]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
             >
@@ -136,36 +138,39 @@ export default function FavoritesScreen({ navigation }) {
                         <Ionicons name="trash" size={20} color="#FFFFFF" />
                     </TouchableOpacity>
                 </View>
+
+                {/* Búsqueda */}
+                <SearchBar
+                    value={searchQuery}
+                    onChangeText={handleSearch}
+                    placeholder="Buscar en favoritos..."
+                    style={styles.searchBar}
+                />
             </LinearGradient>
 
-            {/* Sort Options */}
-            <View style={styles.sortContainer}>
-                <Text style={[styles.sortLabel, { color: colors.text }]}>
-                    Ordenar por:
-                </Text>
-                <View style={styles.sortOptions}>
-                    {renderSortOption('name', 'Nombre', 'text')}
-                    {renderSortOption('recent', 'Reciente', 'time')}
-                    {renderSortOption('category', 'Categoría', 'folder')}
+            <View style={styles.content}>
+                {/* Sort Options */}
+                <View style={styles.sortContainer}>
+                    <Text style={[styles.sortLabel, { color: colors.text }]}>
+                        Ordenar por:
+                    </Text>
+                    <View style={styles.sortOptions}>
+                        {renderSortOption('recent', 'Reciente', 'time')}
+                        {renderSortOption('name', 'Nombre', 'text')}
+                    </View>
                 </View>
-            </View>
 
-            {/* Favorites List */}
-            <FlatList
-                data={getSortedFavorites()}
-                renderItem={renderFavoriteItem}
-                keyExtractor={(item) => item.id}
-                numColumns={2}
-                columnWrapperStyle={styles.row}
-                contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={false}
-            />
-
-            {/* Stats */}
-            <View style={[styles.statsContainer, { backgroundColor: colors.surface }]}>
-                <Text style={[styles.statsText, { color: colors.textSecondary }]}>
-                    {favorites.length} canales favoritos
-                </Text>
+                {/* Favorites Grid */}
+                <View style={styles.channelsSection}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                        Canales Favoritos ({filteredFavorites.length})
+                    </Text>
+                    <ChannelGrid
+                        channels={filteredFavorites}
+                        searchQuery=""
+                        onChannelPress={(channel) => navigation.navigate('Player', { channel })}
+                    />
+                </View>
             </View>
         </View>
     )
@@ -176,15 +181,15 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        height: 120,
-        paddingTop: 50,
-        justifyContent: 'center',
+        minHeight: 140,
+        paddingHorizontal: 20,
+        paddingBottom: 16,
     },
     headerContent: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20,
+        marginBottom: 16,
     },
     headerTitle: {
         fontSize: 24,
@@ -196,8 +201,15 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
     },
+    searchBar: {
+        marginTop: 8,
+    },
+    content: {
+        flex: 1,
+        paddingTop: 25,
+    },
     sortContainer: {
-        padding: 20,
+        paddingHorizontal: 20,
         paddingBottom: 10,
     },
     sortLabel: {
@@ -221,22 +233,13 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
     },
-    listContent: {
-        padding: 20,
+    channelsSection: {
+        paddingHorizontal: 20,
+        flex: 1,
     },
-    row: {
-        justifyContent: 'space-between',
-    },
-    favoriteCard: {
-        width: '48%',
-        marginBottom: 16,
-    },
-    statsContainer: {
-        padding: 16,
-        alignItems: 'center',
-    },
-    statsText: {
-        fontSize: 14,
-        fontWeight: '500',
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        marginBottom: 12,
     },
 })

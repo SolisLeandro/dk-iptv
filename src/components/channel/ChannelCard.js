@@ -10,25 +10,21 @@ import { Ionicons } from '@expo/vector-icons'
 
 import { useTheme } from '../../hooks/useTheme'
 import { useFavorites } from '../../hooks/useFavorites'
+import { useFeatured } from '../../hooks/useFeatured'
 
 export default function ChannelCard({
     channel,
     onPress,
-    onFavoritePress,
     style,
-    showFavorite = true,
 }) {
     const { colors } = useTheme()
-    const { isFavorite, toggleFavorite } = useFavorites()
+    const { isFavorite } = useFavorites()
+    const { isFeatured } = useFeatured()
+    
     const isChannelFavorite = isFavorite(channel.id)
-
-    const handleFavoritePress = () => {
-        toggleFavorite(channel)
-        onFavoritePress?.(channel)
-    }
+    const isChannelFeatured = isFeatured(channel.id)
 
     const getCountryFlag = (countryCode) => {
-        // Mapeo básico de códigos de país a emojis de banderas
         const flagMap = {
             'US': '🇺🇸', 'CA': '🇨🇦', 'MX': '🇲🇽', 'GB': '🇬🇧',
             'DE': '🇩🇪', 'FR': '🇫🇷', 'ES': '🇪🇸', 'IT': '🇮🇹',
@@ -70,6 +66,20 @@ export default function ChannelCard({
                         <Text style={styles.liveText}>LIVE</Text>
                     </View>
                 )}
+
+                {/* Status Icons */}
+                <View style={styles.statusIcons}>
+                    {isChannelFeatured && (
+                        <View style={[styles.statusIcon, { backgroundColor: '#FF6B35' }]}>
+                            <Ionicons name="flame" size={12} color="#FFFFFF" />
+                        </View>
+                    )}
+                    {isChannelFavorite && (
+                        <View style={[styles.statusIcon, { backgroundColor: '#FF1744' }]}>
+                            <Ionicons name="heart" size={12} color="#FFFFFF" />
+                        </View>
+                    )}
+                </View>
             </View>
 
             {/* Content */}
@@ -94,21 +104,6 @@ export default function ChannelCard({
                     </Text>
                 )}
             </View>
-
-            {/* Favorite Button */}
-            {showFavorite && (
-                <TouchableOpacity
-                    style={styles.favoriteButton}
-                    onPress={handleFavoritePress}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                    <Ionicons
-                        name={isChannelFavorite ? "heart" : "heart-outline"}
-                        size={20}
-                        color={isChannelFavorite ? "#FF6B35" : colors.textMuted}
-                    />
-                </TouchableOpacity>
-            )}
 
             {/* Gradient Overlay */}
             <LinearGradient
@@ -170,6 +165,20 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: '700',
     },
+    statusIcons: {
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        flexDirection: 'row',
+        gap: 4,
+    },
+    statusIcon: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     content: {
         padding: 12,
     },
@@ -197,14 +206,6 @@ const styles = StyleSheet.create({
         fontSize: 11,
         fontStyle: 'italic',
     },
-    favoriteButton: {
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        borderRadius: 16,
-        padding: 6,
-    },
     gradient: {
         position: 'absolute',
         bottom: 0,
@@ -213,4 +214,3 @@ const styles = StyleSheet.create({
         height: 40,
     },
 })
-

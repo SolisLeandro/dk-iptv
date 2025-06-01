@@ -7,6 +7,7 @@ import { combineReducers } from '@reduxjs/toolkit'
 import channelsSlice from './slices/channelsSlice'
 import filtersSlice from './slices/filtersSlice'
 import favoritesSlice from './slices/favoritesSlice'
+import featuredSlice from './slices/featuredSlice' // NUEVO
 import themeSlice from './slices/themeSlice'
 import playerSlice from './slices/playerSlice'
 import recentSlice from './slices/recentSlice'
@@ -16,13 +17,14 @@ import settingsSlice from './slices/settingsSlice'
 const persistConfig = {
     key: 'root',
     storage: AsyncStorage,
-    whitelist: ['favorites', 'theme', 'recent', 'settings'], // Solo persistir estos slices
+    whitelist: ['favorites', 'featured', 'theme', 'recent', 'settings'], // AGREGADO featured
 }
 
 const rootReducer = combineReducers({
     channels: channelsSlice,
     filters: filtersSlice,
     favorites: favoritesSlice,
+    featured: featuredSlice, // NUEVO
     theme: themeSlice,
     player: playerSlice,
     recent: recentSlice,
@@ -42,4 +44,3 @@ export const store = configureStore({
 })
 
 export const persistor = persistStore(store)
-
