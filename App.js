@@ -43,10 +43,10 @@ export default function App() {
                 // Pre-load fonts (solo si existen los archivos)
                 try {
                     await Font.loadAsync({
-                        'Inter-Regular': require('./assets/fonts/Inter-Regular.ttf'),
-                        'Inter-Medium': require('./assets/fonts/Inter-Medium.ttf'),
-                        'Inter-SemiBold': require('./assets/fonts/Inter-SemiBold.ttf'),
-                        'Inter-Bold': require('./assets/fonts/Inter-Bold.ttf'),
+                        'Inter-Regular': require('./assets/fonts/Inter-Regular.otf'),
+                        'Inter-Medium': require('./assets/fonts/Inter-Medium.otf'),
+                        'Inter-SemiBold': require('./assets/fonts/Inter-SemiBold.otf'),
+                        'Inter-Bold': require('./assets/fonts/Inter-Bold.otf'),
                     })
                     console.log("✅ Fuentes cargadas correctamente")
                 } catch (fontError) {
