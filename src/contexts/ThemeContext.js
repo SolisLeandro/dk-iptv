@@ -11,7 +11,7 @@ const themeReducer = (state, action) => {
     switch (action.type) {
         case 'SET_THEME':
             const newMode = action.payload
-            const systemColorScheme = useColorScheme()
+            const systemColorScheme = action.systemColorScheme || 'light'
             const isDark = newMode === 'auto'
                 ? systemColorScheme === 'dark'
                 : newMode === 'dark'
@@ -48,30 +48,43 @@ export const ThemeProvider = ({ children }) => {
     })
 
     useEffect(() => {
+        console.log('🎨 Inicializando ThemeProvider...')
         loadTheme()
     }, [])
 
     useEffect(() => {
+        console.log('🎨 Sistema cambió a:', systemColorScheme)
         dispatch({ type: 'SET_SYSTEM_THEME', payload: systemColorScheme || 'light' })
     }, [systemColorScheme])
 
     const loadTheme = async () => {
         try {
+            console.log('📱 Cargando tema guardado...')
             const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY)
             if (savedTheme) {
-                dispatch({ type: 'SET_THEME', payload: savedTheme })
+                console.log('✅ Tema cargado:', savedTheme)
+                dispatch({ 
+                    type: 'SET_THEME', 
+                    payload: savedTheme,
+                    systemColorScheme: systemColorScheme || 'light'
+                })
             }
         } catch (error) {
-            console.error('Error loading theme:', error)
+            console.error('❌ Error loading theme:', error)
         }
     }
 
     const setTheme = async (mode) => {
         try {
+            console.log('🎨 Guardando tema:', mode)
             await AsyncStorage.setItem(THEME_STORAGE_KEY, mode)
-            dispatch({ type: 'SET_THEME', payload: mode })
+            dispatch({ 
+                type: 'SET_THEME', 
+                payload: mode,
+                systemColorScheme: systemColorScheme || 'light'
+            })
         } catch (error) {
-            console.error('Error saving theme:', error)
+            console.error('❌ Error saving theme:', error)
         }
     }
 
@@ -94,4 +107,3 @@ export const useTheme = () => {
     }
     return context
 }
-

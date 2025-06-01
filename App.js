@@ -12,7 +12,7 @@ import { store, persistor } from './src/store'
 import AppNavigator from './src/navigation/AppNavigator'
 import { ThemeProvider } from './src/contexts/ThemeContext'
 import ErrorBoundary from './src/components/common/ErrorBoundary'
-import NetworkProvider from './src/contexts/NetworkContext'
+import { NetworkProvider } from './src/contexts/NetworkContext'
 import LoadingSpinner from './src/components/common/LoadingSpinner'
 
 // Keep splash screen visible while we fetch resources
@@ -38,16 +38,27 @@ export default function App() {
     useEffect(() => {
         async function prepare() {
             try {
-                // Pre-load fonts
-                await Font.loadAsync({
-                    'Inter-Regular': require('./assets/fonts/Inter-Regular.otf'),
-                    'Inter-Medium': require('./assets/fonts/Inter-Medium.otf'),
-                    'Inter-SemiBold': require('./assets/fonts/Inter-SemiBold.otf'),
-                    'Inter-Bold': require('./assets/fonts/Inter-Bold.otf'),
-                })
-                console.log("Se cargaron las fonts")
+                console.log('🚀 Iniciando preparación de la app...')
+                
+                // Pre-load fonts (solo si existen los archivos)
+                try {
+                    await Font.loadAsync({
+                        'Inter-Regular': require('./assets/fonts/Inter-Regular.ttf'),
+                        'Inter-Medium': require('./assets/fonts/Inter-Medium.ttf'),
+                        'Inter-SemiBold': require('./assets/fonts/Inter-SemiBold.ttf'),
+                        'Inter-Bold': require('./assets/fonts/Inter-Bold.ttf'),
+                    })
+                    console.log("✅ Fuentes cargadas correctamente")
+                } catch (fontError) {
+                    console.warn("⚠️ Error cargando fuentes (continuando sin ellas):", fontError.message)
+                }
+                
+                // Delay artificial para ver que funciona
+                await new Promise(resolve => setTimeout(resolve, 1000))
+                
+                console.log("✅ App preparada correctamente")
             } catch (e) {
-                console.warn(e)
+                console.error('❌ Error preparando la app:', e)
             } finally {
                 setAppIsReady(true)
             }
@@ -58,13 +69,17 @@ export default function App() {
 
     const onLayoutRootView = React.useCallback(async () => {
         if (appIsReady) {
+            console.log("🎉 Ocultando splash screen...")
             await SplashScreen.hideAsync()
         }
     }, [appIsReady])
 
     if (!appIsReady) {
+        console.log("⏳ App aún no está lista...")
         return null
     }
+
+    console.log("🚀 Renderizando app principal...")
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
@@ -89,4 +104,3 @@ export default function App() {
         </GestureHandlerRootView>
     )
 }
-

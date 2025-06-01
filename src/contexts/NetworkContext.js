@@ -9,29 +9,57 @@ export const NetworkProvider = ({ children }) => {
     const [connectionType, setConnectionType] = useState('unknown')
 
     useEffect(() => {
-        const unsubscribe = NetInfo.addEventListener(state => {
-            const wasConnected = isConnected
-            setIsConnected(state.isConnected)
-            setConnectionType(state.type)
+        console.log('🌐 Inicializando NetworkProvider...')
+        
+        let unsubscribe = null
 
-            // Mostrar toast cuando cambie el estado de conexión
-            if (wasConnected && !state.isConnected) {
-                Toast.show({
-                    type: 'error',
-                    text1: 'Sin conexión',
-                    text2: 'Verifica tu conexión a internet',
+        // Configurar listener de red
+        const setupNetInfo = async () => {
+            try {
+                // Obtener estado inicial
+                const state = await NetInfo.fetch()
+                console.log('📶 Estado inicial de red:', state)
+                setIsConnected(state.isConnected)
+                setConnectionType(state.type)
+
+                // Configurar listener
+                unsubscribe = NetInfo.addEventListener(state => {
+                    console.log('📶 Cambio de estado de red:', state)
+                    const wasConnected = isConnected
+                    setIsConnected(state.isConnected)
+                    setConnectionType(state.type)
+
+                    // Mostrar toast cuando cambie el estado de conexión
+                    if (wasConnected && !state.isConnected) {
+                        Toast.show({
+                            type: 'error',
+                            text1: 'Sin conexión',
+                            text2: 'Verifica tu conexión a internet',
+                        })
+                    } else if (!wasConnected && state.isConnected) {
+                        Toast.show({
+                            type: 'success',
+                            text1: 'Conectado',
+                            text2: 'Conexión restaurada',
+                        })
+                    }
                 })
-            } else if (!wasConnected && state.isConnected) {
-                Toast.show({
-                    type: 'success',
-                    text1: 'Conectado',
-                    text2: 'Conexión restaurada',
-                })
+            } catch (error) {
+                console.error('❌ Error configurando NetInfo:', error)
+                // Continuar con valores por defecto
+                setIsConnected(true)
+                setConnectionType('unknown')
             }
-        })
+        }
 
-        return () => unsubscribe()
-    }, [isConnected])
+        setupNetInfo()
+
+        return () => {
+            if (unsubscribe) {
+                unsubscribe()
+            }
+        }
+    }, [])
 
     return (
         <NetworkContext.Provider
@@ -54,3 +82,5 @@ export const useNetworkStatus = () => {
     }
     return context
 }
+
+export default NetworkProvider
