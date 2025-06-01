@@ -1,8 +1,9 @@
 import { DefaultTheme, DarkTheme, NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { createDrawerNavigator } from '@react-navigation/drawer'
 import { Ionicons } from '@expo/vector-icons'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Platform } from 'react-native'
 
 import { useTheme } from '../hooks/useTheme'
 
@@ -20,11 +21,11 @@ import OnboardingScreen from '../screens/auth/OnboardingScreen'
 
 const Stack = createStackNavigator()
 const Tab = createBottomTabNavigator()
-const Drawer = createDrawerNavigator()
 
-// Tab Navigator
+// Tab Navigator con Safe Area corregido
 function TabNavigator() {
     const { colors } = useTheme()
+    const insets = useSafeAreaInsets()
 
     return (
         <Tab.Navigator
@@ -33,11 +34,29 @@ function TabNavigator() {
                 tabBarStyle: {
                     backgroundColor: colors.surface,
                     borderTopColor: colors.border,
-                    paddingBottom: 5,
-                    height: 60,
+                    borderTopWidth: 1,
+                    paddingBottom: Platform.OS === 'android' ? insets.bottom + 8 : insets.bottom,
+                    paddingTop: 8,
+                    height: Platform.OS === 'android' 
+                        ? 60 + insets.bottom 
+                        : 85,
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    elevation: 8,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: -2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
                 },
                 tabBarActiveTintColor: colors.primary,
                 tabBarInactiveTintColor: colors.textMuted,
+                tabBarLabelStyle: {
+                    fontSize: 12,
+                    fontWeight: '500',
+                    marginTop: 4,
+                },
                 tabBarIcon: ({ focused, color, size }) => {
                     let iconName
 
@@ -149,13 +168,12 @@ export default function AppNavigator() {
         ...baseTheme,
         colors: {
             ...baseTheme.colors,
-            ...colors, // Tus colores personalizados
+            ...colors,
         },
     }
+
     return (
-        <NavigationContainer
-            theme={theme}
-        >
+        <NavigationContainer theme={theme}>
             <MainStackNavigator />
         </NavigationContainer>
     )

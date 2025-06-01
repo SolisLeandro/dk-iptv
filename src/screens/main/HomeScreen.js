@@ -8,10 +8,11 @@ import {
     TouchableOpacity,
     ScrollView,
     RefreshControl,
+    Platform,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import { BlurView } from 'expo-blur'
 import { Ionicons } from '@expo/vector-icons'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Haptics from 'expo-haptics'
 
 import { useTheme } from '../../hooks/useTheme'
@@ -28,6 +29,7 @@ const { width, height } = Dimensions.get('window')
 export default function HomeScreen({ navigation }) {
     const { colors, isDark } = useTheme()
     const { channels, isLoading, refetch } = useChannels()
+    const insets = useSafeAreaInsets()
 
     const [showFilters, setShowFilters] = useState(false)
     const [refreshing, setRefreshing] = useState(false)
@@ -75,15 +77,18 @@ export default function HomeScreen({ navigation }) {
 
     const handleSearch = (query) => {
         setSearchQuery(query)
-        // Implementar lógica de búsqueda
     }
+
+    // Calcular padding bottom para evitar que el contenido quede por debajo de los tabs
+    const bottomTabHeight = Platform.OS === 'android' ? 60 + insets.bottom : 85
+    const contentPaddingBottom = bottomTabHeight + 20
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             {/* Header con Gradiente Épico */}
             <LinearGradient
                 colors={colors.gradient}
-                style={styles.header}
+                style={[styles.header, { paddingTop: insets.top + 10 }]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
             >
@@ -113,19 +118,16 @@ export default function HomeScreen({ navigation }) {
 
             <View style={styles.content}>
 
-                {/* Stats Cards */}
-                <StatsCards channels={channels} />
                 {/* Canales Destacados */}
                 <View style={styles.section}>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>
                         🔥 Canales Destacados
                     </Text>
-                    <FeaturedChannels channels={channels?.slice(0, 10)} />
+                    <FeaturedChannels 
+                        channels={channels?.slice(0, 10)} 
+                        onChannelPress={(channel) => navigation.navigate('Player', { channel })}
+                    />
                 </View>
-
-                {/* Acciones Rápidas
-                <QuickActions onFilterPress={toggleFilters} />
-                 */}
 
                 {/* Grid de Canales */}
                 <View style={styles.channelsSection}>
@@ -136,6 +138,7 @@ export default function HomeScreen({ navigation }) {
                         channels={channels}
                         searchQuery={searchQuery}
                         onChannelPress={(channel) => navigation.navigate('Player', { channel })}
+                        loading={isLoading}
                     />
                 </View>
             </View>
@@ -147,6 +150,7 @@ export default function HomeScreen({ navigation }) {
                     {
                         transform: [{ translateX: slideAnim }],
                         backgroundColor: colors.surface,
+                        //paddingTop: insets.top,
                     },
                 ]}
             >
@@ -161,15 +165,6 @@ export default function HomeScreen({ navigation }) {
                     activeOpacity={1}
                 />
             )}
-
-            {/* FAB para acciones rápidas */}
-            <TouchableOpacity
-                style={[styles.fab, { backgroundColor: colors.primary }]}
-                onPress={() => navigation.navigate('Search')}
-                activeOpacity={0.8}
-            >
-                <Ionicons name="search" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
         </View>
     )
 }
@@ -179,15 +174,9 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        height: 160,
-        paddingTop: 50,
-    },
-    headerBlur: {
-        flex: 1,
-        justifyContent: 'center',
-    },
-    headerContent: {
+        minHeight: 140,
         paddingHorizontal: 20,
+        paddingBottom: 16,
     },
     headerTop: {
         flexDirection: 'row',
@@ -207,7 +196,6 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: '800',
         color: '#FFFFFF',
-        fontFamily: 'Inter-Bold',
     },
     filterButton: {
         padding: 12,
@@ -219,6 +207,9 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
+        paddingTop: 25
+    },
+    scrollContent: {
         paddingTop: 16,
     },
     section: {
@@ -226,14 +217,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
     },
     channelsSection: {
-        flex: 1,
         paddingHorizontal: 20,
+        flex: 1,
     },
     sectionTitle: {
         fontSize: 20,
         fontWeight: '700',
         marginBottom: 12,
-        fontFamily: 'Inter-Bold',
     },
     filterDrawer: {
         position: 'absolute',
@@ -254,13 +244,16 @@ const styles = StyleSheet.create({
     },
     fab: {
         position: 'absolute',
-        bottom: 24,
         right: 24,
         width: 56,
         height: 56,
         borderRadius: 28,
         justifyContent: 'center',
         alignItems: 'center',
-        elevation: 8
-    }
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+    },
 })
