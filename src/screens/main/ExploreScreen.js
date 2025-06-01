@@ -62,7 +62,7 @@ export default function ExploreScreen({ navigation }) {
             {/* Header */}
             <LinearGradient
                 colors={colors.gradient}
-                style={[styles.header, { paddingTop: insets.top + 10 }]}
+                style={[styles.header, { paddingTop: insets.top }]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
             >
@@ -70,7 +70,7 @@ export default function ExploreScreen({ navigation }) {
                     <Text style={styles.headerTitle}>🔍 Explorar</Text>
                     <TouchableOpacity
                         onPress={toggleFilters}
-                        style={[styles.filterButton, { backgroundColor: colors.overlay }]}
+                        style={[styles.filterButton, { backgroundColor: colors.surface }]}
                         activeOpacity={0.8}
                     >
                         <Ionicons name="options" size={24} color="#FFFFFF" />
@@ -147,13 +147,13 @@ const styles = StyleSheet.create({
     header: {
         minHeight: 140,
         paddingHorizontal: 20,
-        paddingBottom: 16,
+        paddingBottom: 8,
     },
     headerTop: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        height: 70
     },
     headerTitle: {
         fontSize: 24,

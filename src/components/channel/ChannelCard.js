@@ -1,3 +1,4 @@
+// src/components/channel/ChannelCard.js
 import {
     View,
     Text,
@@ -30,6 +31,11 @@ export default function ChannelCard({
             'DE': '🇩🇪', 'FR': '🇫🇷', 'ES': '🇪🇸', 'IT': '🇮🇹',
             'BR': '🇧🇷', 'AR': '🇦🇷', 'CN': '🇨🇳', 'JP': '🇯🇵',
             'IN': '🇮🇳', 'AU': '🇦🇺', 'RU': '🇷🇺', 'KR': '🇰🇷',
+            'CL': '🇨🇱', 'CO': '🇨🇴', 'PE': '🇵🇪', 'VE': '🇻🇪',
+            'EC': '🇪🇨', 'UY': '🇺🇾', 'PY': '🇵🇾', 'BO': '🇧🇴',
+            'CR': '🇨🇷', 'PA': '🇵🇦', 'GT': '🇬🇹', 'HN': '🇭🇳',
+            'SV': '🇸🇻', 'NI': '🇳🇮', 'DO': '🇩🇴', 'CU': '🇨🇺',
+            'PR': '🇵🇷',
         }
         return flagMap[countryCode] || '🌍'
     }
@@ -42,7 +48,21 @@ export default function ChannelCard({
             .join(', ')
     }
 
+    const getBestQuality = () => {
+        if (!channel.availableQualities || channel.availableQualities.length === 0) {
+            return null
+        }
+        
+        const qualityOrder = ['1080p', '720p', '480p', '360p', '240p']
+        for (const quality of qualityOrder) {
+            if (channel.availableQualities.includes(quality)) {
+                return quality
+            }
+        }
+        return channel.availableQualities[0]
+    }
 
+    const bestQuality = getBestQuality()
 
     return (
         <TouchableOpacity
@@ -63,6 +83,22 @@ export default function ChannelCard({
                         <Ionicons name="tv" size={24} color={colors.textMuted} />
                     )}
                 </View>
+
+                {/* Stream Quality Badge */}
+                {bestQuality && (
+                    <View style={[styles.qualityBadge, { 
+                        backgroundColor: channel.hasHDStreams ? '#4CAF50' : '#FF9800' 
+                    }]}>
+                        <Text style={styles.qualityText}>{bestQuality}</Text>
+                    </View>
+                )}
+
+                {/* Stream Count */}
+                {channel.streamCount > 1 && (
+                    <View style={[styles.streamCountBadge, { backgroundColor: colors.primary }]}>
+                        <Text style={styles.streamCountText}>{channel.streamCount}</Text>
+                    </View>
+                )}
 
                 {/* Status Icons */}
                 <View style={styles.statusIcons}>
@@ -92,6 +128,23 @@ export default function ChannelCard({
                     <Text style={[styles.category, { color: colors.textSecondary }]}>
                         {formatCategories(channel.categories)}
                     </Text>
+                </View>
+
+                {/* Stream Info */}
+                <View style={styles.streamInfo}>
+                    <View style={styles.streamIndicator}>
+                        <Ionicons name="radio" size={12} color={colors.primary} />
+                        <Text style={[styles.streamText, { color: colors.primary }]}>
+                            {channel.streamCount || 0} stream{channel.streamCount !== 1 ? 's' : ''}
+                        </Text>
+                    </View>
+                    
+                    {channel.hasHDStreams && (
+                        <View style={styles.hdIndicator}>
+                            <Ionicons name="tv" size={12} color={colors.success} />
+                            <Text style={[styles.hdText, { color: colors.success }]}>HD</Text>
+                        </View>
+                    )}
                 </View>
 
                 {/* Network */}
@@ -140,25 +193,30 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 15
     },
-    liveIndicator: {
+    qualityBadge: {
         position: 'absolute',
         top: 8,
         left: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FF4444',
         paddingHorizontal: 6,
         paddingVertical: 2,
         borderRadius: 4,
     },
-    liveDot: {
-        width: 6,
-        height: 6,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 3,
-        marginRight: 4,
+    qualityText: {
+        color: '#FFFFFF',
+        fontSize: 10,
+        fontWeight: '700',
     },
-    liveText: {
+    streamCountBadge: {
+        position: 'absolute',
+        bottom: 8,
+        left: 8,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    streamCountText: {
         color: '#FFFFFF',
         fontSize: 10,
         fontWeight: '700',
@@ -190,7 +248,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 4,
+        marginBottom: 6,
     },
     country: {
         fontSize: 12,
@@ -199,6 +257,30 @@ const styles = StyleSheet.create({
     category: {
         fontSize: 12,
         fontWeight: '400',
+    },
+    streamInfo: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    streamIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    streamText: {
+        fontSize: 11,
+        fontWeight: '500',
+    },
+    hdIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 2,
+    },
+    hdText: {
+        fontSize: 11,
+        fontWeight: '600',
     },
     network: {
         fontSize: 11,

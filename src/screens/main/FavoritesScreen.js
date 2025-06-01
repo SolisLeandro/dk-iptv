@@ -125,18 +125,13 @@ export default function FavoritesScreen({ navigation }) {
             {/* Header */}
             <LinearGradient
                 colors={colors.gradient}
-                style={[styles.header, { paddingTop: insets.top + 10 }]}
+                style={[styles.header, { paddingTop: insets.top }]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
             >
                 <View style={styles.headerContent}>
                     <Text style={styles.headerTitle}>❤️ Favoritos</Text>
-                    <TouchableOpacity
-                        style={styles.clearButton}
-                        onPress={handleClearFavorites}
-                    >
-                        <Ionicons name="trash" size={20} color="#FFFFFF" />
-                    </TouchableOpacity>
+                    
                 </View>
 
                 {/* Búsqueda */}
@@ -183,13 +178,13 @@ const styles = StyleSheet.create({
     header: {
         minHeight: 140,
         paddingHorizontal: 20,
-        paddingBottom: 16,
+        paddingBottom: 8,
     },
     headerContent: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        height: 70
     },
     headerTitle: {
         fontSize: 24,

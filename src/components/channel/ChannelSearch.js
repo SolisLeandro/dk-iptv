@@ -1,4 +1,3 @@
-// src/components/channel/ChannelSearch.js
 import React from 'react'
 import {
     View,
@@ -49,7 +48,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingVertical: 3,
         borderRadius: 12,
     },
     input: {

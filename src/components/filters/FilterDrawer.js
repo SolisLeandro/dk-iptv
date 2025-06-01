@@ -37,8 +37,8 @@ export default function FilterDrawer({ onClose }) {
                     </Text>
                 </View>
             ) : (
-                <ScrollView style={styles.filterOptions} nestedScrollEnabled>
-                    {data.slice(0, 30).map((item) => {
+                <ScrollView style={styles.filterOptions}>
+                    {data.map((item) => {
                         const key = item[keyField]
                         const name = item[nameField]
                         const isSelected = selectedValue === key
@@ -49,7 +49,7 @@ export default function FilterDrawer({ onClose }) {
                                 style={[
                                     styles.filterOption,
                                     {
-                                        backgroundColor: isSelected ? colors.primary : colors.surface,
+                                        backgroundColor: isSelected ? colors.border : colors.surface,
                                     }
                                 ]}
                                 onPress={() => onSelect(isSelected ? null : key)}
@@ -95,15 +95,15 @@ export default function FilterDrawer({ onClose }) {
                     <LoadingSpinner message="Cargando filtros..." />
                 </View>
             ) : (
-                <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                <View style={styles.content}>
                     {/* Clear Filters Button */}
                     {(selectedCountry || selectedCategory) && (
                         <TouchableOpacity
-                            style={[styles.clearButton, { backgroundColor: colors.error + '20' }]}
+                            style={[styles.clearButton, { backgroundColor: colors.button }]}
                             onPress={clearFilters}
                         >
-                            <Ionicons name="refresh" size={20} color={colors.error} />
-                            <Text style={[styles.clearButtonText, { color: colors.error }]}>
+                            <Ionicons name="refresh" size={20} color={"#FFF"} />
+                            <Text style={[styles.clearButtonText, { color: "#FFF" }]}>
                                 Limpiar Filtros
                             </Text>
                         </TouchableOpacity>
@@ -118,7 +118,7 @@ export default function FilterDrawer({ onClose }) {
                             <View style={styles.activeFilters}>
                                 {selectedCountry && (
                                     <TouchableOpacity
-                                        style={[styles.activeFilter, { backgroundColor: colors.primary }]}
+                                        style={[styles.activeFilter, { backgroundColor: colors.border }]}
                                         onPress={() => setCountry(null)}
                                     >
                                         <Text style={styles.activeFilterText}>
@@ -161,14 +161,7 @@ export default function FilterDrawer({ onClose }) {
                         keyField="id"
                         nameField="name"
                     />
-
-                    {/* Info Section */}
-                    <View style={[styles.infoSection, { backgroundColor: colors.surface }]}>
-                        <Text style={[styles.infoText, { color: colors.textMuted }]}>
-                            💡 Los filtros se aplican automáticamente. Puedes combinar múltiples filtros para refinar tu búsqueda.
-                        </Text>
-                    </View>
-                </ScrollView>
+                </View>
             )}
         </View>
     )
@@ -179,15 +172,15 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        height: 100,
-        paddingTop: 50,
+        height: 120,
+        paddingTop: 30,
         justifyContent: 'center',
     },
     headerContent: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: 20
     },
     headerTitle: {
         fontSize: 20,
@@ -248,6 +241,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     filterSection: {
+        flex:1,
         marginBottom: 24,
     },
     filterTitle: {
@@ -256,7 +250,7 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     filterOptions: {
-        maxHeight: 200,
+        paddingHorizontal: 10
     },
     filterOption: {
         flexDirection: 'row',

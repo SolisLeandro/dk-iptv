@@ -4,8 +4,6 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    Switch,
-    Alert,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
@@ -15,7 +13,8 @@ import * as Haptics from 'expo-haptics'
 import { useTheme } from '../../hooks/useTheme'
 import ThemeSelector from '../../components/settings/ThemeSelector'
 import Card from '../../components/ui/Card'
-import Button from '../../components/ui/Button'
+import Constants from 'expo-constants'
+
 
 const SettingsOption = ({ icon, title, subtitle, onPress, rightElement }) => {
     const { colors } = useTheme()
@@ -60,7 +59,7 @@ export default function SettingsScreen({ navigation }) {
             {/* Header */}
             <LinearGradient
                 colors={colors.gradient}
-                style={[styles.header, { paddingTop: insets.top + 10 }]}
+                style={[styles.header, { paddingTop: insets.top }]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
             >
@@ -82,7 +81,7 @@ export default function SettingsScreen({ navigation }) {
                     <SettingsOption
                         icon="information-circle"
                         title="Acerca de"
-                        subtitle="Versión 1.0.0"
+                        subtitle={"Versión: " + Constants.expoConfig?.version || '1.0.0'}
                         onPress={handleAbout}
                     />
                 </View>

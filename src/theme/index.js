@@ -19,6 +19,7 @@ export const lightTheme = {
         overlay: 'rgba(0, 0, 0, 0.5)',
         ripple: 'rgba(255, 107, 53, 0.2)',
         shadow: 'rgba(0, 0, 0, 0.1)',
+        button: 'rgba(255, 255, 255, 0.2)',
     }
 }
 
@@ -43,6 +44,7 @@ export const darkTheme = {
         overlay: 'rgba(0, 0, 0, 0.8)',
         ripple: 'rgba(255, 107, 53, 0.3)',
         shadow: 'rgba(0, 0, 0, 0.3)',
+        button: 'rgba(255, 255, 255, 0)',
     }
 }
 

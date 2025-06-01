@@ -5,6 +5,7 @@ import {
     ScrollView,
     TouchableOpacity,
     Linking,
+    Image,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
@@ -16,32 +17,27 @@ export default function AboutScreen({ navigation }) {
     const { colors } = useTheme()
 
     const appInfo = {
-        version: '1.0.0',
+        appName: "DK iptv",
+        version: Constants.expoConfig?.version || '1.0.0',
         buildNumber: '1',
-        author: 'Tu Nombre',
-        description: 'Aplicación para streaming de canales IPTV con una interfaz moderna y funcionalidades avanzadas.',
+        author: 'Leandro Solis',
     }
 
     const links = [
         {
             title: 'Código Fuente',
             icon: 'logo-github',
-            url: 'https://github.com/tu-usuario/iptv-app',
+            url: 'https://github.com/SolisLeandro/dk-iptv',
         },
         {
             title: 'Reportar Error',
             icon: 'bug',
-            url: 'https://github.com/tu-usuario/iptv-app/issues',
+            url: 'https://github.com/SolisLeandro/dk-iptv/issues',
         },
         {
-            title: 'Política de Privacidad',
-            icon: 'shield-checkmark',
-            url: 'https://tu-sitio.com/privacy',
-        },
-        {
-            title: 'Términos de Uso',
-            icon: 'document-text',
-            url: 'https://tu-sitio.com/terms',
+            title: 'Api IPTV',
+            icon: 'tv',
+            url: 'https://github.com/iptv-org/api',
         },
     ]
 
@@ -88,7 +84,7 @@ export default function AboutScreen({ navigation }) {
                         style={styles.backButton}
                         onPress={() => navigation.goBack()}
                     >
-                        <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+                        <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>ℹ️ Acerca de</Text>
                 </View>
@@ -98,40 +94,23 @@ export default function AboutScreen({ navigation }) {
                 {/* App Logo */}
                 <View style={styles.logoSection}>
                     <View style={[styles.logoContainer, { backgroundColor: colors.surface }]}>
-                        <Text style={styles.logoText}>📺</Text>
+                        <View style={styles.logoContainer}>
+                            <Image
+                                source={require('../../../assets/images/DKiptvLogo.png')}
+                                style={styles.logo}
+                                resizeMode="contain"
+                            />
+                        </View>
                     </View>
-                    <Text style={[styles.appName, { color: colors.text }]}>IPTV Stream Master</Text>
-                    <Text style={[styles.appTagline, { color: colors.textSecondary }]}>
-                        {appInfo.description}
-                    </Text>
+                    <Text style={[styles.appName, { color: colors.text }]}>{appInfo.appName}</Text>
                 </View>
 
                 {/* App Information */}
                 <View style={[styles.section, { backgroundColor: colors.surface }]}>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>Información de la App</Text>
                     <InfoRow label="Versión" value={appInfo.version} />
-                    <InfoRow label="Build" value={appInfo.buildNumber} />
                     <InfoRow label="Desarrollador" value={appInfo.author} />
                     <InfoRow label="Plataforma" value={Constants.platform?.ios ? 'iOS' : 'Android'} />
-                </View>
-
-                {/* Features */}
-                <View style={[styles.section, { backgroundColor: colors.surface }]}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Características</Text>
-                    <View style={styles.featuresList}>
-                        {[
-                            '📺 Más de 10,000 canales IPTV',
-                            '🎨 Tema claro y oscuro',
-                            '❤️ Sistema de favoritos',
-                            '🔍 Búsqueda avanzada',
-                            '📱 Diseño responsive',
-                            '🎥 Reproductor integrado',
-                        ].map((feature, index) => (
-                            <Text key={index} style={[styles.featureItem, { color: colors.textSecondary }]}>
-                                {feature}
-                            </Text>
-                        ))}
-                    </View>
                 </View>
 
                 {/* Links */}
@@ -141,25 +120,6 @@ export default function AboutScreen({ navigation }) {
                         <LinkItem key={index} item={link} />
                     ))}
                 </View>
-
-                {/* Credits */}
-                <View style={[styles.section, { backgroundColor: colors.surface }]}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Agradecimientos</Text>
-                    <Text style={[styles.creditsText, { color: colors.textSecondary }]}>
-                        Datos de canales proporcionados por IPTV-org.
-                        {'\n\n'}
-                        Iconos por Ionicons.
-                        {'\n\n'}
-                        Desarrollado con React Native y Expo.
-                    </Text>
-                </View>
-
-                {/* Copyright */}
-                <View style={styles.footer}>
-                    <Text style={[styles.copyright, { color: colors.textMuted }]}>
-                        © 2024 IPTV Stream Master. Todos los derechos reservados.
-                    </Text>
-                </View>
             </ScrollView>
         </View>
     )
@@ -168,11 +128,13 @@ export default function AboutScreen({ navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        paddingBottom: 60
     },
     header: {
-        height: 120,
-        paddingTop: 50,
+        minHeight: 100,
+        paddingBottom: 16,
         justifyContent: 'center',
+        justifyContent: 'flex-end',
     },
     headerContent: {
         flexDirection: 'row',
@@ -196,15 +158,17 @@ const styles = StyleSheet.create({
     },
     logoSection: {
         alignItems: 'center',
-        marginBottom: 32,
+        marginBottom: 15
     },
     logoContainer: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        justifyContent: 'center',
+        flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 16,
+        borderRadius: 100,
+        padding: 5
+    },
+    logo: {
+        width: 100,
+        height: 100,
     },
     logoText: {
         fontSize: 40,
@@ -221,7 +185,7 @@ const styles = StyleSheet.create({
         lineHeight: 24,
     },
     section: {
-        marginBottom: 24,
+        marginBottom: 15,
         padding: 16,
         borderRadius: 12,
     },
