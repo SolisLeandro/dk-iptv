@@ -20,6 +20,8 @@ export default function PlayerScreen({ route, navigation }) {
     const { lockPortrait } = useOrientation()
     const [selectedStreamIndex, setSelectedStreamIndex] = useState(0)
 
+    console.log("channel",channel)
+
     // Obtener streams para el canal
     const {
         data: streams,

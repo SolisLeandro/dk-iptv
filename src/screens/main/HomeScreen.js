@@ -87,62 +87,34 @@ export default function HomeScreen({ navigation }) {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
             >
-                <BlurView
-                    intensity={isDark ? 30 : 20}
-                    style={styles.headerBlur}
-                    tint={isDark ? 'dark' : 'light'}
-                >
-                    <Animated.View
-                        style={[
-                            styles.headerContent,
-                            {
-                                opacity: fadeAnim,
-                                transform: [{ scale: scaleAnim }]
-                            }
-                        ]}
+                <View style={styles.headerTop}>
+                    <View style={styles.logoContainer}>
+                        <Text style={styles.logoEmoji}>📺</Text>
+                        <Text style={styles.headerTitle}>Stream Master</Text>
+                    </View>
+
+                    <TouchableOpacity
+                        onPress={toggleFilters}
+                        style={[styles.filterButton, { backgroundColor: colors.overlay }]}
+                        activeOpacity={0.8}
                     >
-                        <View style={styles.headerTop}>
-                            <View style={styles.logoContainer}>
-                                <Text style={styles.logoEmoji}>📺</Text>
-                                <Text style={styles.headerTitle}>Stream Master</Text>
-                            </View>
+                        <Ionicons name="options" size={24} color="#FFFFFF" />
+                    </TouchableOpacity>
+                </View>
 
-                            <TouchableOpacity
-                                onPress={toggleFilters}
-                                style={[styles.filterButton, { backgroundColor: colors.overlay }]}
-                                activeOpacity={0.8}
-                            >
-                                <Ionicons name="options" size={24} color="#FFFFFF" />
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* Búsqueda */}
-                        <SearchBar
-                            value={searchQuery}
-                            onChangeText={handleSearch}
-                            placeholder="Buscar canales..."
-                            style={styles.searchBar}
-                        />
-                    </Animated.View>
-                </BlurView>
+                {/* Búsqueda */}
+                <SearchBar
+                    value={searchQuery}
+                    onChangeText={handleSearch}
+                    placeholder="Buscar canales..."
+                    style={styles.searchBar}
+                />
             </LinearGradient>
 
-            {/* Stats Cards */}
-            <StatsCards channels={channels} />
+            <View style={styles.content}>
 
-            {/* Contenido Principal */}
-            <ScrollView
-                style={styles.content}
-                showsVerticalScrollIndicator={false}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={onRefresh}
-                        colors={[colors.primary]}
-                        tintColor={colors.primary}
-                    />
-                }
-            >
+                {/* Stats Cards */}
+                <StatsCards channels={channels} />
                 {/* Canales Destacados */}
                 <View style={styles.section}>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -151,11 +123,12 @@ export default function HomeScreen({ navigation }) {
                     <FeaturedChannels channels={channels?.slice(0, 10)} />
                 </View>
 
-                {/* Acciones Rápidas */}
+                {/* Acciones Rápidas
                 <QuickActions onFilterPress={toggleFilters} />
+                 */}
 
                 {/* Grid de Canales */}
-                <View style={styles.section}>
+                <View style={styles.channelsSection}>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>
                         🌍 Todos los Canales
                     </Text>
@@ -165,7 +138,7 @@ export default function HomeScreen({ navigation }) {
                         onChannelPress={(channel) => navigation.navigate('Player', { channel })}
                     />
                 </View>
-            </ScrollView>
+            </View>
 
             {/* Drawer de Filtros */}
             <Animated.View
@@ -250,6 +223,10 @@ const styles = StyleSheet.create({
     },
     section: {
         marginBottom: 24,
+        paddingHorizontal: 20,
+    },
+    channelsSection: {
+        flex: 1,
         paddingHorizontal: 20,
     },
     sectionTitle: {

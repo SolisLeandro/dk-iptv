@@ -4,13 +4,84 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    Slider,
+    PanGestureHandler,
+    Dimensions,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 
 import { useTheme } from '../../hooks/useTheme'
+
+const { width } = Dimensions.get('window')
+
+// Componente de slider personalizado simple
+const CustomSlider = ({ 
+    value = 0, 
+    minimumValue = 0, 
+    maximumValue = 1, 
+    onValueChange,
+    minimumTrackTintColor = '#FF6B35',
+    maximumTrackTintColor = 'rgba(255,255,255,0.3)',
+    style 
+}) => {
+    const [isDragging, setIsDragging] = useState(false)
+    const [sliderWidth, setSliderWidth] = useState(0)
+
+    const handleLayout = (event) => {
+        setSliderWidth(event.nativeEvent.layout.width - 20) // 20 for thumb size
+    }
+
+    const handleTouch = (event) => {
+        if (sliderWidth === 0) return
+
+        const touchX = event.nativeEvent.locationX - 10 // 10 for thumb radius
+        const percentage = Math.max(0, Math.min(1, touchX / sliderWidth))
+        const newValue = minimumValue + (percentage * (maximumValue - minimumValue))
+        
+        onValueChange?.(newValue)
+        Haptics.selectionAsync()
+    }
+
+    const progressPercentage = maximumValue > minimumValue 
+        ? (value - minimumValue) / (maximumValue - minimumValue) 
+        : 0
+
+    return (
+        <TouchableOpacity
+            style={[styles.sliderContainer, style]}
+            onLayout={handleLayout}
+            onPress={handleTouch}
+            activeOpacity={0.8}
+        >
+            <View style={styles.sliderTrack}>
+                {/* Background track */}
+                <View style={[
+                    styles.sliderTrackBackground,
+                    { backgroundColor: maximumTrackTintColor }
+                ]} />
+                
+                {/* Progress track */}
+                <View style={[
+                    styles.sliderTrackProgress,
+                    { 
+                        backgroundColor: minimumTrackTintColor,
+                        width: `${progressPercentage * 100}%`
+                    }
+                ]} />
+                
+                {/* Thumb */}
+                <View style={[
+                    styles.sliderThumb,
+                    {
+                        left: `${progressPercentage * 100}%`,
+                        backgroundColor: '#FFFFFF'
+                    }
+                ]} />
+            </View>
+        </TouchableOpacity>
+    )
+}
 
 export default function PlayerControls({
     player,
@@ -19,7 +90,7 @@ export default function PlayerControls({
     isFullscreen,
     channel,
     onPlayPause,
-    showProgressBar = true,
+    showProgressBar = false, // Cambiado a false por defecto para streams en vivo
 }) {
     const { colors } = useTheme()
     const [isSeeking, setIsSeeking] = useState(false)
@@ -115,14 +186,16 @@ export default function PlayerControls({
 
                 {/* Center Controls */}
                 <View style={styles.centerControls}>
-                    <TouchableOpacity
-                        style={styles.skipButton}
-                        onPress={() => handleSkip(-10)}
-                        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-                    >
-                        <Ionicons name="play-back" size={32} color="#FFFFFF" />
-                        <Text style={styles.skipText}>10s</Text>
-                    </TouchableOpacity>
+                    {duration > 0 && (
+                        <TouchableOpacity
+                            style={styles.skipButton}
+                            onPress={() => handleSkip(-10)}
+                            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                        >
+                            <Ionicons name="play-back" size={32} color="#FFFFFF" />
+                            <Text style={styles.skipText}>10s</Text>
+                        </TouchableOpacity>
+                    )}
 
                     <TouchableOpacity
                         style={styles.playButton}
@@ -138,14 +211,16 @@ export default function PlayerControls({
                         </View>
                     </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={styles.skipButton}
-                        onPress={() => handleSkip(10)}
-                        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-                    >
-                        <Ionicons name="play-forward" size={32} color="#FFFFFF" />
-                        <Text style={styles.skipText}>10s</Text>
-                    </TouchableOpacity>
+                    {duration > 0 && (
+                        <TouchableOpacity
+                            style={styles.skipButton}
+                            onPress={() => handleSkip(10)}
+                            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                        >
+                            <Ionicons name="play-forward" size={32} color="#FFFFFF" />
+                            <Text style={styles.skipText}>10s</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
 
                 {/* Bottom Controls */}
@@ -156,15 +231,13 @@ export default function PlayerControls({
                         </Text>
 
                         <View style={styles.progressContainer}>
-                            <Slider
+                            <CustomSlider
                                 style={styles.progressSlider}
                                 value={progress}
                                 minimumValue={0}
                                 maximumValue={1}
                                 minimumTrackTintColor={colors.primary}
                                 maximumTrackTintColor="rgba(255,255,255,0.3)"
-                                thumbStyle={styles.progressThumb}
-                                trackStyle={styles.progressTrack}
                                 onValueChange={handleSeek}
                             />
                         </View>
@@ -274,15 +347,6 @@ const styles = StyleSheet.create({
     progressSlider: {
         height: 40,
     },
-    progressThumb: {
-        width: 16,
-        height: 16,
-        backgroundColor: '#FFFFFF',
-    },
-    progressTrack: {
-        height: 4,
-        borderRadius: 2,
-    },
     liveIndicator: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -304,5 +368,39 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 12,
         fontWeight: '700',
+    },
+    // Estilos para el slider personalizado
+    sliderContainer: {
+        height: 40,
+        justifyContent: 'center',
+        paddingHorizontal: 10,
+    },
+    sliderTrack: {
+        height: 4,
+        position: 'relative',
+    },
+    sliderTrackBackground: {
+        height: 4,
+        borderRadius: 2,
+        position: 'absolute',
+        width: '100%',
+    },
+    sliderTrackProgress: {
+        height: 4,
+        borderRadius: 2,
+        position: 'absolute',
+    },
+    sliderThumb: {
+        width: 16,
+        height: 16,
+        borderRadius: 8,
+        position: 'absolute',
+        top: -6,
+        marginLeft: -8,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
     },
 })

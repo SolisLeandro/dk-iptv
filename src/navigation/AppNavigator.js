@@ -1,4 +1,4 @@
-import { NavigationContainer } from '@react-navigation/native'
+import { DefaultTheme, DarkTheme, NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createDrawerNavigator } from '@react-navigation/drawer'
@@ -142,20 +142,19 @@ function MainStackNavigator() {
 
 // Root Navigator
 export default function AppNavigator() {
-    const { colors } = useTheme()
+    const { colors, isDark } = useTheme()
 
+    const baseTheme = isDark ? DarkTheme : DefaultTheme
+    const theme = {
+        ...baseTheme,
+        colors: {
+            ...baseTheme.colors,
+            ...colors, // Tus colores personalizados
+        },
+    }
     return (
         <NavigationContainer
-            theme={{
-                colors: {
-                    primary: colors.primary,
-                    background: colors.background,
-                    card: colors.surface,
-                    text: colors.text,
-                    border: colors.border,
-                    notification: colors.accent,
-                },
-            }}
+            theme={theme}
         >
             <MainStackNavigator />
         </NavigationContainer>

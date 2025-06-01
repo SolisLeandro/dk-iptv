@@ -37,7 +37,16 @@ export default function Button({
     }
 
     const getButtonStyles = () => {
-        const baseStyle = [styles.button, styles[size]]
+        const baseStyle = [styles.button]
+
+        // Agregar estilos de tamaño
+        if (size === 'small') {
+            baseStyle.push(styles.small)
+        } else if (size === 'large') {
+            baseStyle.push(styles.large)
+        } else {
+            baseStyle.push(styles.medium)
+        }
 
         switch (variant) {
             case 'primary':
@@ -76,7 +85,16 @@ export default function Button({
     }
 
     const getTextStyles = () => {
-        const baseStyle = [styles.text, styles[`${size}Text`]]
+        const baseStyle = [styles.text]
+
+        // Agregar estilos de texto por tamaño
+        if (size === 'small') {
+            baseStyle.push(styles.smallText)
+        } else if (size === 'large') {
+            baseStyle.push(styles.largeText)
+        } else {
+            baseStyle.push(styles.mediumText)
+        }
 
         switch (variant) {
             case 'primary':

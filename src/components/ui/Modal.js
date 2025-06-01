@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import {
     Modal as RNModal,
     View,
@@ -13,7 +13,7 @@ import Animated, {
     useAnimatedStyle,
     withSpring,
     withTiming,
-    useEffect as useReanimatedEffect,
+    runOnJS,
 } from 'react-native-reanimated'
 
 import { useTheme } from '../../hooks/useTheme'
@@ -35,7 +35,8 @@ export default function Modal({
     const scale = useSharedValue(0.8)
     const opacity = useSharedValue(0)
 
-    useReanimatedEffect(() => {
+    // Usar useEffect de React en lugar de useReanimatedEffect
+    useEffect(() => {
         if (visible) {
             translateY.value = withSpring(0, { damping: 20 })
             scale.value = withSpring(1, { damping: 20 })

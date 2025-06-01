@@ -9,7 +9,7 @@ import {
     Alert,
 } from 'react-native'
 import { VideoView, useVideoPlayer } from 'expo-video'
-import { keepAwake, deactivateKeepAwake } from 'expo-keep-awake'
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
 import * as ScreenOrientation from 'expo-screen-orientation'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
@@ -19,6 +19,7 @@ import { useTheme } from '../../hooks/useTheme'
 import PlayerControls from './PlayerControls'
 import StreamSelector from './StreamSelector'
 import QualitySelector from './QualitySelector'
+import StreamDebugger from './StreamDebugger'
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
 
@@ -29,20 +30,42 @@ export default function VideoPlayer({ streams, channel, onBack }) {
     const [currentStreamIndex, setCurrentStreamIndex] = useState(0)
     const [showControls, setShowControls] = useState(true)
     const [error, setError] = useState(null)
+    const [showDebugger, setShowDebugger] = useState(false)
 
     const controlsTimeoutRef = useRef(null)
     const currentStream = streams[currentStreamIndex]
 
-    // Crear el player de video
-    const player = useVideoPlayer(currentStream?.url || '', (player) => {
+    // Crear el player de video con headers
+    const player = useVideoPlayer(currentStream ? {
+        uri: currentStream.url,
+        headers: {
+            ...(currentStream.referrer && { 'Referer': currentStream.referrer }),
+            ...(currentStream.user_agent && { 'User-Agent': currentStream.user_agent }),
+        }
+    } : '', (player) => {
         player.loop = false
         player.play()
     })
 
     useEffect(() => {
-        keepAwake()
+        // Activar keep awake de forma asíncrona
+        const setupKeepAwake = async () => {
+            try {
+                await activateKeepAwakeAsync()
+            } catch (error) {
+                console.warn('Error activating keep awake:', error)
+            }
+        }
+        
+        setupKeepAwake()
+        
         return () => {
-            deactivateKeepAwake()
+            try {
+                deactivateKeepAwake()
+            } catch (error) {
+                console.warn('Error deactivating keep awake:', error)
+            }
+            
             if (controlsTimeoutRef.current) {
                 clearTimeout(controlsTimeoutRef.current)
             }
@@ -114,8 +137,18 @@ export default function VideoPlayer({ streams, channel, onBack }) {
             setError(null)
             setIsLoading(true)
 
-            // Cambiar la fuente del player
-            player.replace(streams[index].url)
+            const newStream = streams[index]
+            
+            // Cambiar la fuente del player con headers
+            const source = {
+                uri: newStream.url,
+                headers: {
+                    ...(newStream.referrer && { 'Referer': newStream.referrer }),
+                    ...(newStream.user_agent && { 'User-Agent': newStream.user_agent }),
+                }
+            }
+            
+            player.replace(source)
 
             Haptics.selectionAsync()
         }
@@ -180,12 +213,22 @@ export default function VideoPlayer({ streams, channel, onBack }) {
                         >
                             <Ionicons name="warning" size={48} color="#FFFFFF" />
                             <Text style={styles.errorText}>{error}</Text>
-                            <TouchableOpacity
-                                style={styles.retryButton}
-                                onPress={() => handleStreamChange(currentStreamIndex)}
-                            >
-                                <Text style={styles.retryButtonText}>Reintentar</Text>
-                            </TouchableOpacity>
+                            
+                            <View style={styles.errorActions}>
+                                <TouchableOpacity
+                                    style={styles.retryButton}
+                                    onPress={() => handleStreamChange(currentStreamIndex)}
+                                >
+                                    <Text style={styles.retryButtonText}>Reintentar</Text>
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity
+                                    style={[styles.retryButton, styles.debugButton]}
+                                    onPress={() => setShowDebugger(true)}
+                                >
+                                    <Text style={styles.retryButtonText}>Debug</Text>
+                                </TouchableOpacity>
+                            </View>
                         </LinearGradient>
                     </View>
                 )}
@@ -224,8 +267,26 @@ export default function VideoPlayer({ streams, channel, onBack }) {
                             }
                         }}
                     />
+                    
+                    {/* Debug Button */}
+                    <TouchableOpacity
+                        style={[styles.debugButtonSmall, { backgroundColor: colors.textMuted + '20' }]}
+                        onPress={() => setShowDebugger(true)}
+                    >
+                        <Ionicons name="bug" size={16} color={colors.textMuted} />
+                        <Text style={[styles.debugButtonSmallText, { color: colors.textMuted }]}>
+                            Debug
+                        </Text>
+                    </TouchableOpacity>
                 </View>
             )}
+
+            {/* Stream Debugger Modal */}
+            <StreamDebugger
+                stream={currentStream}
+                visible={showDebugger}
+                onClose={() => setShowDebugger(false)}
+            />
         </View>
     )
 }
@@ -284,6 +345,10 @@ const styles = StyleSheet.create({
         marginTop: 16,
         marginBottom: 24,
     },
+    errorActions: {
+        flexDirection: 'row',
+        gap: 12,
+    },
     retryButton: {
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
         paddingHorizontal: 24,
@@ -291,6 +356,10 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    debugButton: {
+        backgroundColor: 'rgba(255, 193, 7, 0.2)',
+        borderColor: 'rgba(255, 193, 7, 0.3)',
     },
     retryButtonText: {
         color: '#FFFFFF',
@@ -301,5 +370,19 @@ const styles = StyleSheet.create({
         padding: 16,
         borderTopWidth: 1,
         borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    debugButtonSmall: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 8,
+        marginTop: 8,
+        alignSelf: 'flex-start',
+        gap: 4,
+    },
+    debugButtonSmallText: {
+        fontSize: 12,
+        fontWeight: '500',
     },
 })

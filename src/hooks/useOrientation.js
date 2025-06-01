@@ -5,43 +5,69 @@ export const useOrientation = () => {
     const [orientation, setOrientation] = useState('portrait')
 
     useEffect(() => {
-        const subscription = ScreenOrientation.addOrientationChangeListener(
-            (event) => {
-                const { orientationInfo } = event
+        let subscription = null
+
+        const setupOrientation = async () => {
+            try {
+                // Obtener orientación inicial
+                const orientationInfo = await ScreenOrientation.getOrientationAsync()
                 setOrientation(
-                    orientationInfo.orientation === ScreenOrientation.Orientation.PORTRAIT_UP ||
-                        orientationInfo.orientation === ScreenOrientation.Orientation.PORTRAIT_DOWN
+                    orientationInfo === ScreenOrientation.Orientation.PORTRAIT_UP ||
+                    orientationInfo === ScreenOrientation.Orientation.PORTRAIT_DOWN
                         ? 'portrait'
                         : 'landscape'
                 )
-            }
-        )
 
-        // Obtener orientación inicial
-        ScreenOrientation.getOrientationAsync().then((orientationInfo) => {
-            setOrientation(
-                orientationInfo.orientation === ScreenOrientation.Orientation.PORTRAIT_UP ||
-                    orientationInfo.orientation === ScreenOrientation.Orientation.PORTRAIT_DOWN
-                    ? 'portrait'
-                    : 'landscape'
-            )
-        })
+                // Configurar listener
+                subscription = ScreenOrientation.addOrientationChangeListener(
+                    (event) => {
+                        const { orientationInfo } = event
+                        setOrientation(
+                            orientationInfo.orientation === ScreenOrientation.Orientation.PORTRAIT_UP ||
+                            orientationInfo.orientation === ScreenOrientation.Orientation.PORTRAIT_DOWN
+                                ? 'portrait'
+                                : 'landscape'
+                        )
+                    }
+                )
+            } catch (error) {
+                console.warn('Error setting up orientation listener:', error)
+                // Continuar con valor por defecto
+                setOrientation('portrait')
+            }
+        }
+
+        setupOrientation()
 
         return () => {
-            ScreenOrientation.removeOrientationChangeListener(subscription)
+            if (subscription) {
+                ScreenOrientation.removeOrientationChangeListener(subscription)
+            }
         }
     }, [])
 
-    const lockPortrait = () => {
-        ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT)
+    const lockPortrait = async () => {
+        try {
+            await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT)
+        } catch (error) {
+            console.warn('Error locking to portrait:', error)
+        }
     }
 
-    const lockLandscape = () => {
-        ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE)
+    const lockLandscape = async () => {
+        try {
+            await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE)
+        } catch (error) {
+            console.warn('Error locking to landscape:', error)
+        }
     }
 
-    const unlockOrientation = () => {
-        ScreenOrientation.unlockAsync()
+    const unlockOrientation = async () => {
+        try {
+            await ScreenOrientation.unlockAsync()
+        } catch (error) {
+            console.warn('Error unlocking orientation:', error)
+        }
     }
 
     return {
