@@ -11,10 +11,10 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 
-import { useTheme } from '../hooks/useTheme'
-import ThemeSelector from '../components/settings/ThemeSelector'
-import Card from '../components/ui/Card'
-import Button from '../components/ui/Button'
+import { useTheme } from '../../hooks/useTheme'
+import ThemeSelector from '../../components/settings/ThemeSelector'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 
 const SettingsOption = ({ icon, title, subtitle, onPress, rightElement }) => {
     const { colors } = useTheme()

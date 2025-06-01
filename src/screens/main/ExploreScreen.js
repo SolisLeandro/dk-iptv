@@ -14,7 +14,6 @@ import { useTheme } from '../../hooks/useTheme'
 import { useChannels } from '../../hooks/useChannels'
 import { useFilters } from '../../hooks/useFilters'
 import ChannelCard from '../../components/channel/ChannelCard'
-import FilterChips from '../../components/filters/FilterChips'
 
 export default function ExploreScreen({ navigation }) {
     const { colors } = useTheme()

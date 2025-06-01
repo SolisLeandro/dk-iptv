@@ -158,7 +158,7 @@ export default function SearchScreen({ navigation }) {
     )
 }
 
-const SearchScreenStyles = StyleSheet.create({
+const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
@@ -227,6 +227,3 @@ const SearchScreenStyles = StyleSheet.create({
         fontWeight: '500',
     },
 })
-
-// Combinar estilos
-Object.assign(styles, RecentScreenStyles, SearchScreenStyles)

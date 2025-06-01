@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import NetInfo from '@react-native-netinfo/netinfo'
+import NetInfo from '@react-native-community/netinfo'
 import Toast from 'react-native-toast-message'
 
 const NetworkContext = createContext()
@@ -54,4 +54,3 @@ export const useNetworkStatus = () => {
     }
     return context
 }
-

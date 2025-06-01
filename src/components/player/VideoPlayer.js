@@ -8,7 +8,7 @@ import {
     StatusBar,
     Alert,
 } from 'react-native'
-import { Video, ResizeMode } from 'expo-av'
+import { VideoView, useVideoPlayer } from 'expo-video'
 import { keepAwake, deactivateKeepAwake } from 'expo-keep-awake'
 import * as ScreenOrientation from 'expo-screen-orientation'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -24,15 +24,20 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
 
 export default function VideoPlayer({ streams, channel, onBack }) {
     const { colors } = useTheme()
-    const [status, setStatus] = useState({})
     const [isFullscreen, setIsFullscreen] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [currentStreamIndex, setCurrentStreamIndex] = useState(0)
     const [showControls, setShowControls] = useState(true)
     const [error, setError] = useState(null)
 
-    const videoRef = useRef(null)
     const controlsTimeoutRef = useRef(null)
+    const currentStream = streams[currentStreamIndex]
+
+    // Crear el player de video
+    const player = useVideoPlayer(currentStream?.url || '', (player) => {
+        player.loop = false
+        player.play()
+    })
 
     useEffect(() => {
         keepAwake()
@@ -58,6 +63,35 @@ export default function VideoPlayer({ streams, channel, onBack }) {
         }
     }, [showControls])
 
+    // Listener para eventos del player
+    useEffect(() => {
+        const subscription = player.addListener('playingChange', (isPlaying) => {
+            setIsLoading(!isPlaying && player.status === 'loading')
+        })
+
+        const errorSubscription = player.addListener('statusChange', (status) => {
+            if (status === 'error') {
+                setError('Error al reproducir el stream')
+                setIsLoading(false)
+
+                // Auto cambiar al siguiente stream disponible
+                if (currentStreamIndex < streams.length - 1) {
+                    setTimeout(() => {
+                        handleStreamChange(currentStreamIndex + 1)
+                    }, 2000)
+                }
+            } else if (status === 'readyToPlay') {
+                setIsLoading(false)
+                setError(null)
+            }
+        })
+
+        return () => {
+            subscription?.remove()
+            errorSubscription?.remove()
+        }
+    }, [player, currentStreamIndex, streams.length])
+
     const toggleFullscreen = async () => {
         try {
             if (!isFullscreen) {
@@ -75,26 +109,15 @@ export default function VideoPlayer({ streams, channel, onBack }) {
     }
 
     const handleStreamChange = (index) => {
-        setCurrentStreamIndex(index)
-        setError(null)
-        setIsLoading(true)
-        Haptics.selectionAsync()
-    }
+        if (streams[index]) {
+            setCurrentStreamIndex(index)
+            setError(null)
+            setIsLoading(true)
 
-    const handlePlaybackStatusUpdate = (playbackStatus) => {
-        setStatus(playbackStatus)
+            // Cambiar la fuente del player
+            player.replace(streams[index].url)
 
-        if (playbackStatus.isLoaded) {
-            setIsLoading(false)
-            if (playbackStatus.error) {
-                setError('Error al reproducir el stream')
-                // Auto cambiar al siguiente stream disponible
-                if (currentStreamIndex < streams.length - 1) {
-                    setTimeout(() => {
-                        handleStreamChange(currentStreamIndex + 1)
-                    }, 2000)
-                }
-            }
+            Haptics.selectionAsync()
         }
     }
 
@@ -106,10 +129,17 @@ export default function VideoPlayer({ streams, channel, onBack }) {
     const handleBack = async () => {
         await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT)
         StatusBar.setHidden(false)
+        player.pause()
         onBack()
     }
 
-    const currentStream = streams[currentStreamIndex]
+    const handlePlayPause = () => {
+        if (player.playing) {
+            player.pause()
+        } else {
+            player.play()
+        }
+    }
 
     return (
         <View style={[styles.container, { backgroundColor: '#000000' }]}>
@@ -119,24 +149,14 @@ export default function VideoPlayer({ streams, channel, onBack }) {
                 onPress={toggleControls}
                 activeOpacity={1}
             >
-                {currentStream && (
-                    <Video
-                        ref={videoRef}
-                        style={styles.video}
-                        source={{
-                            uri: currentStream.url,
-                            headers: {
-                                'Referer': currentStream.referrer || '',
-                                'User-Agent': currentStream.user_agent || 'ExpoAV',
-                            }
-                        }}
-                        useNativeControls={false}
-                        resizeMode={ResizeMode.CONTAIN}
-                        isLooping={false}
-                        onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-                        shouldPlay={!error}
-                    />
-                )}
+                <VideoView
+                    style={styles.video}
+                    player={player}
+                    allowsFullscreen={false}
+                    allowsPictureInPicture={false}
+                    contentFit="contain"
+                    nativeControls={false}
+                />
 
                 {/* Loading Overlay */}
                 {isLoading && (
@@ -173,12 +193,12 @@ export default function VideoPlayer({ streams, channel, onBack }) {
                 {/* Controls Overlay */}
                 {showControls && !isLoading && (
                     <PlayerControls
-                        status={status}
-                        videoRef={videoRef}
+                        player={player}
                         onBack={handleBack}
                         onFullscreen={toggleFullscreen}
                         isFullscreen={isFullscreen}
                         channel={channel}
+                        onPlayPause={handlePlayPause}
                     />
                 )}
             </TouchableOpacity>

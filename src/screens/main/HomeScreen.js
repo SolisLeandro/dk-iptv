@@ -14,14 +14,14 @@ import { BlurView } from 'expo-blur'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
 
-import { useTheme } from '../hooks/useTheme'
-import { useChannels } from '../hooks/useChannels'
-import ChannelGrid from '../components/channel/ChannelGrid'
-import FeaturedChannels from '../components/channel/FeaturedChannels'
-import FilterDrawer from '../components/filters/FilterDrawer'
-import SearchBar from '../components/channel/ChannelSearch'
-import QuickActions from '../components/common/QuickActions'
-import StatsCards from '../components/common/StatsCards'
+import { useTheme } from '../../hooks/useTheme'
+import { useChannels } from '../../hooks/useChannels'
+import ChannelGrid from '../../components/channel/ChannelGrid'
+import FeaturedChannels from '../../components/channel/FeaturedChannels'
+import FilterDrawer from '../../components/filters/FilterDrawer'
+import SearchBar from '../../components/channel/ChannelSearch'
+import QuickActions from '../../components/common/QuickActions'
+import StatsCards from '../../components/common/StatsCards'
 
 const { width, height } = Dimensions.get('window')
 

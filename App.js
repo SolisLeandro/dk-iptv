@@ -40,14 +40,12 @@ export default function App() {
             try {
                 // Pre-load fonts
                 await Font.loadAsync({
-                    'Inter-Regular': require('./assets/fonts/Inter-Regular.ttf'),
-                    'Inter-Medium': require('./assets/fonts/Inter-Medium.ttf'),
-                    'Inter-SemiBold': require('./assets/fonts/Inter-SemiBold.ttf'),
-                    'Inter-Bold': require('./assets/fonts/Inter-Bold.ttf'),
+                    'Inter-Regular': require('./assets/fonts/Inter-Regular.otf'),
+                    'Inter-Medium': require('./assets/fonts/Inter-Medium.otf'),
+                    'Inter-SemiBold': require('./assets/fonts/Inter-SemiBold.otf'),
+                    'Inter-Bold': require('./assets/fonts/Inter-Bold.otf'),
                 })
-
-                // Artificially delay for demo purposes
-                await new Promise(resolve => setTimeout(resolve, 2000))
+                console.log("Se cargaron las fonts")
             } catch (e) {
                 console.warn(e)
             } finally {
