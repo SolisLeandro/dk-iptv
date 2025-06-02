@@ -100,7 +100,7 @@ export default function ThemeSelector() {
     return (
         <View style={styles.container}>
             <Text style={[styles.title, { color: colors.text }]}>
-                🎨 Selecciona tu tema favorito
+                Selecciona tu tema favorito
             </Text>
 
             <View style={styles.optionsContainer}>
