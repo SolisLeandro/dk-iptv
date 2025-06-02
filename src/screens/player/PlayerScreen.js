@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react'
 import {
     View,
@@ -6,7 +7,6 @@ import {
     Alert,
     BackHandler,
 } from 'react-native'
-import { useQuery } from '@tanstack/react-query'
 
 import { usePlayer } from '../../hooks/usePlayer'
 import { useOrientation } from '../../hooks/useOrientation'
@@ -19,19 +19,40 @@ export default function PlayerScreen({ route, navigation }) {
     const { playChannel, currentChannel, stopPlayback } = usePlayer()
     const { lockPortrait } = useOrientation()
     const [selectedStreamIndex, setSelectedStreamIndex] = useState(0)
+    const [streams, setStreams] = useState([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState(null)
 
-    console.log("channel",channel)
+    console.log("channel", channel)
 
-    // Obtener streams para el canal
-    const {
-        data: streams,
-        isLoading: streamsLoading,
-        error: streamsError,
-    } = useQuery({
-        queryKey: ['streams', channel.id],
-        queryFn: () => streamsService.getStreamsByChannel(channel.id),
-        enabled: !!channel.id,
-    })
+    // Cargar streams para el canal SIN React Query
+    useEffect(() => {
+        const loadStreams = async () => {
+            try {
+                setIsLoading(true)
+                setError(null)
+                console.log(`🎥 Cargando streams para canal: ${channel.id}`)
+                
+                const channelStreams = await streamsService.getStreamsByChannel(channel.id)
+                
+                if (channelStreams && channelStreams.length > 0) {
+                    setStreams(channelStreams)
+                    console.log(`✅ ${channelStreams.length} streams cargados`)
+                } else {
+                    throw new Error('No streams disponibles')
+                }
+            } catch (err) {
+                console.error('❌ Error cargando streams:', err)
+                setError(err.message)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        if (channel?.id) {
+            loadStreams()
+        }
+    }, [channel?.id])
 
     useEffect(() => {
         // Reproducir canal cuando lleguen los streams
@@ -84,7 +105,7 @@ export default function PlayerScreen({ route, navigation }) {
     }
 
     // Mostrar loading mientras cargan los streams
-    if (streamsLoading) {
+    if (isLoading) {
         return (
             <View style={styles.loadingContainer}>
                 <StatusBar hidden />
@@ -97,7 +118,7 @@ export default function PlayerScreen({ route, navigation }) {
     }
 
     // Mostrar error si no hay streams
-    if (streamsError || !streams || streams.length === 0) {
+    if (error || !streams || streams.length === 0) {
         Alert.alert(
             'Error',
             'No se encontraron streams disponibles para este canal.',

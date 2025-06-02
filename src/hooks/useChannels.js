@@ -1,6 +1,6 @@
+
 import { useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { useQuery } from '@tanstack/react-query'
 import {
     fetchChannels,
     filterChannels,
@@ -16,7 +16,8 @@ export const useChannels = () => {
         searchResults,
         loading,
         error,
-        searchQuery
+        searchQuery,
+        initialized
     } = useSelector(state => state.channels)
 
     const {
@@ -24,26 +25,6 @@ export const useChannels = () => {
         selectedCategory,
         selectedLanguage
     } = useSelector(state => state.filters)
-
-    // Query para obtener canales con React Query
-    const {
-        data: channels,
-        isLoading: queryLoading,
-        error: queryError,
-        refetch,
-    } = useQuery({
-        queryKey: ['channels'],
-        queryFn: channelsService.getChannels,
-        staleTime: 5 * 60 * 1000, // 5 minutos
-        cacheTime: 10 * 60 * 1000, // 10 minutos
-    })
-
-    // Sincronizar con Redux cuando lleguen los datos
-    useEffect(() => {
-        if (channels && channels !== list) {
-            dispatch(fetchChannels.fulfilled(channels))
-        }
-    }, [channels, dispatch, list])
 
     // Aplicar filtros cuando cambien
     useEffect(() => {
@@ -59,6 +40,20 @@ export const useChannels = () => {
             }
         }
     }, [selectedCountry, selectedCategory, selectedLanguage, dispatch, list])
+
+    // Función de refetch manual (NO automática)
+    const refetch = async () => {
+        try {
+            console.log('🔄 Recargando canales manualmente...')
+            dispatch(fetchChannels.pending())
+            const channels = await channelsService.getChannels()
+            dispatch(fetchChannels.fulfilled(channels))
+            console.log('✅ Canales recargados')
+        } catch (error) {
+            console.error('❌ Error recargando canales:', error)
+            dispatch(fetchChannels.rejected(error.message))
+        }
+    }
 
     // Determinar qué canales mostrar
     const getDisplayChannels = () => {
@@ -77,12 +72,13 @@ export const useChannels = () => {
         allChannels: list,
         filteredChannels: filteredList,
         searchResults,
-        isLoading: loading || queryLoading,
-        error: error || queryError?.message,
+        isLoading: loading,
+        error,
         searchQuery,
         refetch,
         hasActiveFilters: !!(selectedCountry || selectedCategory || selectedLanguage),
         totalChannels: list.length,
         filteredCount: displayChannels.length,
+        initialized, // Para saber si ya se cargaron los datos iniciales
     }
 }

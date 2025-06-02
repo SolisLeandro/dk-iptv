@@ -35,6 +35,7 @@ const channelsSlice = createSlice({
         loading: false,
         error: null,
         searchQuery: '',
+        initialized: false, // NUEVO: para evitar múltiples cargas
     },
     reducers: {
         setSearchQuery: (state, action) => {
@@ -76,6 +77,10 @@ const channelsSlice = createSlice({
             console.log('🧹 Limpiando filtros')
             state.filteredList = []
         },
+        // NUEVO: marcar como inicializado
+        setInitialized: (state, action) => {
+            state.initialized = action.payload
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -86,15 +91,17 @@ const channelsSlice = createSlice({
             .addCase(fetchChannels.fulfilled, (state, action) => {
                 state.loading = false
                 state.list = action.payload
+                state.initialized = true // MARCAR COMO INICIALIZADO
                 // Si no hay filtros activos, limpiar la lista filtrada
                 if (state.filteredList.length === 0) {
                     state.filteredList = []
                 }
-                console.log('📡 Canales cargados:', action.payload.length)
+                console.log('📡 Canales cargados en Redux:', action.payload.length)
             })
             .addCase(fetchChannels.rejected, (state, action) => {
                 state.loading = false
                 state.error = action.payload
+                state.initialized = false
             })
             .addCase(searchChannels.fulfilled, (state, action) => {
                 state.searchResults = action.payload
@@ -106,7 +113,8 @@ export const {
     setSearchQuery,
     clearSearch,
     filterChannels,
-    clearFilters
+    clearFilters,
+    setInitialized
 } = channelsSlice.actions
 
 export default channelsSlice.reducer

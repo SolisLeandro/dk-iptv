@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { StatusBar } from 'expo-status-bar'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Provider } from 'react-redux'
 import { PersistGate } from 'redux-persist/integration/react'
 import Toast from 'react-native-toast-message'
@@ -13,23 +12,39 @@ import AppNavigator from './src/navigation/AppNavigator'
 import { ThemeProvider } from './src/contexts/ThemeContext'
 import ErrorBoundary from './src/components/common/ErrorBoundary'
 import LoadingSpinner from './src/components/common/LoadingSpinner'
+import InitialLoadingModal from './src/components/common/InitialLoadingModal'
+import { useInitialLoad } from './src/hooks/useInitialLoad'
 
 // Keep splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync()
 
-const queryClient = new QueryClient({
-    defaultOptions: {
-        queries: {
-            staleTime: 5 * 60 * 1000, // 5 minutes
-            cacheTime: 10 * 60 * 1000, // 10 minutes
-            retry: 3,
-            retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-        },
-        mutations: {
-            retry: 2,
-        },
-    },
-})
+// Componente principal de la app que maneja la carga inicial
+function AppContent() {
+    const { isLoading, progress, error, retryLoad } = useInitialLoad()
+    const [showInitialLoading, setShowInitialLoading] = useState(true)
+
+    const handleLoadingComplete = () => {
+        setShowInitialLoading(false)
+    }
+
+    const handleRetry = () => {
+        setShowInitialLoading(true)
+        retryLoad()
+    }
+
+    return (
+        <>
+            <AppNavigator />
+            <InitialLoadingModal
+                visible={isLoading || showInitialLoading}
+                progress={progress}
+                error={error}
+                onComplete={handleLoadingComplete}
+                onRetry={handleRetry}
+            />
+        </>
+    )
+}
 
 export default function App() {
     const [appIsReady, setAppIsReady] = useState(false)
@@ -85,13 +100,11 @@ export default function App() {
                         loading={<LoadingSpinner message="Iniciando aplicación..." />}
                         persistor={persistor}
                     >
-                        <QueryClientProvider client={queryClient}>
-                            <ThemeProvider>
-                                <AppNavigator />
-                                <StatusBar style="auto" />
-                                <Toast />
-                            </ThemeProvider>
-                        </QueryClientProvider>
+                        <ThemeProvider>
+                            <AppContent />
+                            <StatusBar style="auto" />
+                            <Toast />
+                        </ThemeProvider>
                     </PersistGate>
                 </Provider>
             </ErrorBoundary>
