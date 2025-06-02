@@ -3,7 +3,7 @@ import {
     View,
     StyleSheet,
     Dimensions,
-    TouchableOpacity,
+    TouchableWithoutFeedback,
     Text,
     StatusBar,
     Alert,
@@ -11,6 +11,7 @@ import {
 import { VideoView, useVideoPlayer } from 'expo-video'
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
 import * as ScreenOrientation from 'expo-screen-orientation'
+import * as NavigationBar from 'expo-navigation-bar'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
 import * as Haptics from 'expo-haptics'
@@ -72,11 +73,20 @@ export default function VideoPlayer({ streams, channel, onBack }) {
         }
     }, [])
 
+    // Función para configurar el timeout de los controles
+    const startControlsTimeout = () => {
+        if (controlsTimeoutRef.current) {
+            clearTimeout(controlsTimeoutRef.current)
+        }
+        
+        controlsTimeoutRef.current = setTimeout(() => {
+            setShowControls(false)
+        }, 5000) // 5 segundos
+    }
+
     useEffect(() => {
         if (showControls) {
-            controlsTimeoutRef.current = setTimeout(() => {
-                setShowControls(false)
-            }, 5000)
+            startControlsTimeout()
         }
 
         return () => {
@@ -118,14 +128,29 @@ export default function VideoPlayer({ streams, channel, onBack }) {
     const toggleFullscreen = async () => {
         try {
             if (!isFullscreen) {
+                // Entrar a pantalla completa
                 await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE)
-                StatusBar.setHidden(true)
+                StatusBar.setHidden(true, 'fade')
+                
+                // Ocultar navegación de Android
+                try {
+                    await NavigationBar.setVisibilityAsync('hidden')
+                } catch (navError) {
+                    console.warn('Error hiding navigation bar:', navError)
+                }
             } else {
+                // Salir de pantalla completa
                 await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT)
-                StatusBar.setHidden(false)
+                StatusBar.setHidden(false, 'fade')
+                
+                // Mostrar navegación de Android
+                try {
+                    await NavigationBar.setVisibilityAsync('visible')
+                } catch (navError) {
+                    console.warn('Error showing navigation bar:', navError)
+                }
             }
             setIsFullscreen(!isFullscreen)
-            //Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
         } catch (error) {
             console.error('Error toggling fullscreen:', error)
         }
@@ -149,19 +174,30 @@ export default function VideoPlayer({ streams, channel, onBack }) {
             }
             
             player.replace(source)
-
-            //Haptics.selectionAsync()
         }
     }
 
     const toggleControls = () => {
-        setShowControls(!showControls)
-        //Haptics.selectionAsync()
+        const newShowControls = !showControls
+        setShowControls(newShowControls)
+        
+        // Si se muestran los controles, iniciar el timeout
+        if (newShowControls) {
+            startControlsTimeout()
+        }
     }
 
     const handleBack = async () => {
+        // Restaurar configuración normal
         await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT)
-        StatusBar.setHidden(false)
+        StatusBar.setHidden(false, 'fade')
+        
+        try {
+            await NavigationBar.setVisibilityAsync('visible')
+        } catch (navError) {
+            console.warn('Error showing navigation bar on back:', navError)
+        }
+        
         player.pause()
         onBack()
     }
@@ -174,14 +210,17 @@ export default function VideoPlayer({ streams, channel, onBack }) {
         }
     }
 
+    // Manejar toque en el área del video (sin interceptar los controles)
+    const handleVideoTouch = () => {
+        if (!isLoading && !error) {
+            toggleControls()
+        }
+    }
+
     return (
         <View style={[styles.container, { backgroundColor: '#000000' }]}>
-            {/* Video Player */}
-            <TouchableOpacity
-                style={styles.videoContainer}
-                onPress={toggleControls}
-                activeOpacity={1}
-            >
+            {/* Video Player con TouchableWithoutFeedback para mejor detección */}
+            <View style={styles.videoContainer}>
                 <VideoView
                     style={styles.video}
                     player={player}
@@ -190,6 +229,11 @@ export default function VideoPlayer({ streams, channel, onBack }) {
                     contentFit="contain"
                     nativeControls={false}
                 />
+
+                {/* Overlay transparente para detectar toques */}
+                <TouchableWithoutFeedback onPress={handleVideoTouch}>
+                    <View style={styles.touchOverlay} />
+                </TouchableWithoutFeedback>
 
                 {/* Loading Overlay */}
                 {isLoading && (
@@ -215,19 +259,21 @@ export default function VideoPlayer({ streams, channel, onBack }) {
                             <Text style={styles.errorText}>{error}</Text>
                             
                             <View style={styles.errorActions}>
-                                <TouchableOpacity
-                                    style={styles.retryButton}
+                                <TouchableWithoutFeedback
                                     onPress={() => handleStreamChange(currentStreamIndex)}
                                 >
-                                    <Text style={styles.retryButtonText}>Reintentar</Text>
-                                </TouchableOpacity>
+                                    <View style={styles.retryButton}>
+                                        <Text style={styles.retryButtonText}>Reintentar</Text>
+                                    </View>
+                                </TouchableWithoutFeedback>
                                 
-                                <TouchableOpacity
-                                    style={[styles.retryButton, styles.debugButton]}
+                                <TouchableWithoutFeedback
                                     onPress={() => setShowDebugger(true)}
                                 >
-                                    <Text style={styles.retryButtonText}>Debug</Text>
-                                </TouchableOpacity>
+                                    <View style={[styles.retryButton, styles.debugButton]}>
+                                        <Text style={styles.retryButtonText}>Debug</Text>
+                                    </View>
+                                </TouchableWithoutFeedback>
                             </View>
                         </LinearGradient>
                     </View>
@@ -244,9 +290,9 @@ export default function VideoPlayer({ streams, channel, onBack }) {
                         onPlayPause={handlePlayPause}
                     />
                 )}
-            </TouchableOpacity>
+            </View>
 
-            {/* Bottom Controls */}
+            {/* Bottom Controls - Solo en modo normal */}
             {!isFullscreen && (
                 <View style={[styles.bottomControls, { backgroundColor: colors.surface }]}>
                     {/* Stream Selector */}
@@ -269,15 +315,16 @@ export default function VideoPlayer({ streams, channel, onBack }) {
                     />
                     
                     {/* Debug Button */}
-                    <TouchableOpacity
-                        style={[styles.debugButtonSmall, { backgroundColor: colors.textMuted + '20' }]}
+                    <TouchableWithoutFeedback
                         onPress={() => setShowDebugger(true)}
                     >
-                        <Ionicons name="bug" size={16} color={colors.textMuted} />
-                        <Text style={[styles.debugButtonSmallText, { color: colors.textMuted }]}>
-                            Debug
-                        </Text>
-                    </TouchableOpacity>
+                        <View style={[styles.debugButtonSmall, { backgroundColor: colors.textMuted + '20' }]}>
+                            <Ionicons name="bug" size={16} color={colors.textMuted} />
+                            <Text style={[styles.debugButtonSmallText, { color: colors.textMuted }]}>
+                                Debug
+                            </Text>
+                        </View>
+                    </TouchableWithoutFeedback>
                 </View>
             )}
 
@@ -297,17 +344,22 @@ const styles = StyleSheet.create({
     },
     videoContainer: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+        position: 'relative',
     },
     video: {
         width: '100%',
         height: '100%',
     },
+    touchOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'transparent',
+        zIndex: 1,
+    },
     loadingOverlay: {
         ...StyleSheet.absoluteFillObject,
         justifyContent: 'center',
         alignItems: 'center',
+        zIndex: 10,
     },
     loadingGradient: {
         ...StyleSheet.absoluteFillObject,
@@ -330,6 +382,7 @@ const styles = StyleSheet.create({
         ...StyleSheet.absoluteFillObject,
         justifyContent: 'center',
         alignItems: 'center',
+        zIndex: 10,
     },
     errorGradient: {
         ...StyleSheet.absoluteFillObject,

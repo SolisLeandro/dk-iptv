@@ -3,7 +3,7 @@ import {
     View,
     Text,
     StyleSheet,
-    TouchableOpacity,
+    TouchableWithoutFeedback,
 } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
@@ -70,23 +70,25 @@ export default function PlayerControls({
     }
 
     return (
-        <View style={styles.container}>
+        <View style={styles.container} pointerEvents="box-none">
             <LinearGradient
                 colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.8)']}
                 style={styles.gradient}
                 locations={[0, 0.5, 1]}
+                pointerEvents="box-none"
             >
                 {/* Top Controls */}
-                <View style={styles.topControls}>
-                    <TouchableOpacity
-                        style={styles.backButton}
+                <View style={styles.topControls} pointerEvents="box-none">
+                    <TouchableWithoutFeedback
                         onPress={onBack}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
-                        <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-                    </TouchableOpacity>
+                        <View style={styles.backButton}>
+                            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+                        </View>
+                    </TouchableWithoutFeedback>
 
-                    <View style={styles.channelInfo}>
+                    <View style={styles.channelInfo} pointerEvents="none">
                         <Text style={styles.channelName} numberOfLines={1}>
                             {channel?.name || 'Canal Desconocido'}
                         </Text>
@@ -95,67 +97,71 @@ export default function PlayerControls({
                         </Text>
                     </View>
 
-                    <TouchableOpacity
-                        style={styles.fullscreenButton}
+                    <TouchableWithoutFeedback
                         onPress={onFullscreen}
                         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
-                        <Ionicons
-                            name={isFullscreen ? "contract" : "expand"}
-                            size={24}
-                            color="#FFFFFF"
-                        />
-                    </TouchableOpacity>
-                </View>
-
-                {/* Center Controls */}
-                <View style={styles.centerControls}>
-                    <TouchableOpacity
-                        style={styles.playButton}
-                        onPress={handlePlayPause}
-                        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-                    >
-                        <View style={styles.playButtonInner}>
+                        <View style={styles.fullscreenButton}>
                             <Ionicons
-                                name={isPlaying ? "pause" : "play"}
-                                size={40}
+                                name={isFullscreen ? "contract" : "expand"}
+                                size={24}
                                 color="#FFFFFF"
                             />
                         </View>
-                    </TouchableOpacity>
+                    </TouchableWithoutFeedback>
+                </View>
+
+                {/* Center Controls */}
+                <View style={styles.centerControls} pointerEvents="box-none">
+                    <TouchableWithoutFeedback
+                        onPress={handlePlayPause}
+                        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                    >
+                        <View style={styles.playButton}>
+                            <View style={styles.playButtonInner}>
+                                <Ionicons
+                                    name={isPlaying ? "pause" : "play"}
+                                    size={40}
+                                    color="#FFFFFF"
+                                />
+                            </View>
+                        </View>
+                    </TouchableWithoutFeedback>
                 </View>
 
                 {/* Bottom Controls */}
-                <View style={styles.bottomControls}>
+                <View style={styles.bottomControls} pointerEvents="box-none">
                     {/* Action Buttons */}
-                    <View style={styles.actionButtons}>
-                        <TouchableOpacity
-                            style={[styles.actionButton, { backgroundColor: isChannelFavorite ? '#FF1744' : 'rgba(255, 255, 255, 0.2)' }]}
-                            onPress={handleToggleFavorite}
-                        >
-                            <Ionicons
-                                name={isChannelFavorite ? "heart" : "heart-outline"}
-                                size={20}
-                                color="#FFFFFF"
-                            />
-                            <Text style={styles.actionButtonText}>
-                                {isChannelFavorite ? 'Favorito' : 'Favorito'}
-                            </Text>
-                        </TouchableOpacity>
+                    <View style={styles.actionButtons} pointerEvents="box-none">
+                        <TouchableWithoutFeedback onPress={handleToggleFavorite}>
+                            <View style={[styles.actionButton, { 
+                                backgroundColor: isChannelFavorite ? '#FF1744' : 'rgba(255, 255, 255, 0.2)' 
+                            }]}>
+                                <Ionicons
+                                    name={isChannelFavorite ? "heart" : "heart-outline"}
+                                    size={20}
+                                    color="#FFFFFF"
+                                />
+                                <Text style={styles.actionButtonText}>
+                                    {isChannelFavorite ? 'Favorito' : 'Favorito'}
+                                </Text>
+                            </View>
+                        </TouchableWithoutFeedback>
 
-                        <TouchableOpacity
-                            style={[styles.actionButton, { backgroundColor: isChannelFeatured ? '#FF6B35' : 'rgba(255, 255, 255, 0.2)' }]}
-                            onPress={handleToggleFeatured}
-                        >
-                            <Ionicons
-                                name={isChannelFeatured ? "flame" : "flame-outline"}
-                                size={20}
-                                color="#FFFFFF"
-                            />
-                            <Text style={styles.actionButtonText}>
-                                {isChannelFeatured ? 'Destacado' : 'Destacado'}
-                            </Text>
-                        </TouchableOpacity>
+                        <TouchableWithoutFeedback onPress={handleToggleFeatured}>
+                            <View style={[styles.actionButton, { 
+                                backgroundColor: isChannelFeatured ? '#FF6B35' : 'rgba(255, 255, 255, 0.2)' 
+                            }]}>
+                                <Ionicons
+                                    name={isChannelFeatured ? "flame" : "flame-outline"}
+                                    size={20}
+                                    color="#FFFFFF"
+                                />
+                                <Text style={styles.actionButtonText}>
+                                    {isChannelFeatured ? 'Destacado' : 'Destacado'}
+                                </Text>
+                            </View>
+                        </TouchableWithoutFeedback>
                     </View>
                 </View>
             </LinearGradient>
@@ -166,6 +172,7 @@ export default function PlayerControls({
 const styles = StyleSheet.create({
     container: {
         ...StyleSheet.absoluteFillObject,
+        zIndex: 5,
     },
     gradient: {
         flex: 1,
@@ -177,7 +184,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingTop: 30,
-        paddingHorizontal: 50
+        paddingHorizontal: 20,
     },
     backButton: {
         padding: 8,
@@ -242,26 +249,5 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 14,
         fontWeight: '600',
-    },
-    liveIndicator: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(255, 68, 68, 0.9)',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 16,
-    },
-    liveDot: {
-        width: 8,
-        height: 8,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 4,
-        marginRight: 6,
-    },
-    liveText: {
-        color: '#FFFFFF',
-        fontSize: 12,
-        fontWeight: '700',
     },
 })
