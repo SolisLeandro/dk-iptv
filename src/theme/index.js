@@ -1,7 +1,7 @@
 export const lightTheme = {
     colors: {
-        primary: '#FF6B35',      // Naranja vibrante
-        secondary: '#4ECDC4',    // Turquesa
+        primary: '#00c6cf',
+        secondary: '#ffae2b',    
         accent: '#45B7D1',       // Azul cielo
         background: '#FFFFFF',
         surface: '#F8F9FA',
@@ -14,8 +14,8 @@ export const lightTheme = {
         success: '#28A745',
         warning: '#FFC107',
         info: '#17A2B8',
-        gradient: ['#FF6B35', '#F7931E'],
-        gradientSecondary: ['#4ECDC4', '#44A08D'],
+        gradient: ['#264653', '#1D3557'], // azul profundo y gris azulado
+        gradientSecondary: ['#E63946', '#F1FAEE'], // rojo suave + blanco nieve
         overlay: 'rgba(0, 0, 0, 0.5)',
         ripple: 'rgba(255, 107, 53, 0.2)',
         shadow: 'rgba(0, 0, 0, 0.1)',
