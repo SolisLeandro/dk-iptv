@@ -1,3 +1,4 @@
+
 import { createSlice } from '@reduxjs/toolkit'
 
 const featuredSlice = createSlice({
@@ -12,7 +13,7 @@ const featuredSlice = createSlice({
             if (!exists) {
                 state.channels.push({
                     ...channel,
-                    addedAt: new Date().toISOString(),
+                    addedAt: channel.addedAt || new Date().toISOString(),
                 })
             }
         },
@@ -29,12 +30,25 @@ const featuredSlice = createSlice({
             } else {
                 state.channels.push({
                     ...channel,
-                    addedAt: new Date().toISOString(),
+                    addedAt: channel.addedAt || new Date().toISOString(),
                 })
             }
         },
         clearFeatured: (state) => {
             state.channels = []
+        },
+        // NUEVO: Actualizar información de un destacado específico
+        updateFeaturedInfo: (state, action) => {
+            const updatedChannel = action.payload
+            const index = state.channels.findIndex(ch => ch.id === updatedChannel.id)
+            if (index !== -1) {
+                state.channels[index] = {
+                    ...state.channels[index],
+                    ...updatedChannel,
+                    // Mantener el timestamp original
+                    addedAt: state.channels[index].addedAt,
+                }
+            }
         },
     },
 })
@@ -43,7 +57,8 @@ export const {
     addToFeatured,
     removeFromFeatured,
     toggleFeatured,
-    clearFeatured
+    clearFeatured,
+    updateFeaturedInfo
 } = featuredSlice.actions
 
 export default featuredSlice.reducer

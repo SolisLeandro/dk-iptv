@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import { channelsService } from '../services/api/channels'
@@ -8,6 +8,7 @@ import { fetchChannels } from '../store/slices/channelsSlice'
 import { fetchFilters } from '../store/slices/filtersSlice'
 
 const CACHE_KEY = '@initial_load_complete'
+const CACHE_DATA_KEY = '@cached_app_data'
 const CACHE_EXPIRY = 24 * 60 * 60 * 1000 // 24 horas
 
 export const useInitialLoad = () => {
@@ -15,7 +16,11 @@ export const useInitialLoad = () => {
     const [isLoading, setIsLoading] = useState(true)
     const [progress, setProgress] = useState(0)
     const [error, setError] = useState(null)
-    
+
+    // Verificar si ya hay datos en Redux
+    const channelsInRedux = useSelector(state => state.channels.list)
+    const filtersInRedux = useSelector(state => state.filters.countries)
+
     // Ref para evitar múltiples llamadas
     const isLoadingRef = useRef(false)
     const hasInitializedRef = useRef(false)
@@ -35,15 +40,142 @@ export const useInitialLoad = () => {
         }
     }
 
-    const setCacheComplete = async () => {
+    // Función para comprimir datos antes del cache
+    const compressDataForCache = (channels, filters) => {
+        // Solo guardar los campos esenciales de los canales
+        const compressedChannels = channels.map(channel => ({
+            id: channel.id,
+            name: channel.name,
+            country: channel.country,
+            categories: channel.categories,
+            logo: channel.logo,
+            streamCount: channel.streamCount,
+            hasHDStreams: channel.hasHDStreams,
+            availableQualities: channel.availableQualities,
+            // Omitir campos grandes como alt_names, network, etc.
+        }))
+
+        return {
+            channels: compressedChannels,
+            filters: filters,
+            compressed: true,
+            timestamp: Date.now()
+        }
+    }
+
+    // Función para expandir datos del cache
+    const expandCachedData = (cachedData, fullChannels) => {
+        if (!cachedData.compressed) {
+            return cachedData // Datos no comprimidos (cache viejo)
+        }
+
+        // Crear un mapa para búsqueda rápida
+        const channelMap = new Map(fullChannels.map(ch => [ch.id, ch]))
+
+        // Expandir datos comprimidos
+        const expandedChannels = cachedData.channels.map(compressedChannel => {
+            const fullChannel = channelMap.get(compressedChannel.id)
+            return fullChannel ? {
+                ...fullChannel,
+                streamCount: compressedChannel.streamCount,
+                hasHDStreams: compressedChannel.hasHDStreams,
+                availableQualities: compressedChannel.availableQualities,
+            } : compressedChannel
+        })
+
+        return {
+            channels: expandedChannels,
+            filters: cachedData.filters
+        }
+    }
+
+    const loadCachedData = async () => {
         try {
-            const cacheData = {
-                timestamp: Date.now(),
-                version: '1.0.0'
+            const cachedDataString = await AsyncStorage.getItem(CACHE_DATA_KEY)
+            if (cachedDataString) {
+                // Verificar tamaño del cache
+                const sizeInBytes = new Blob([cachedDataString]).size
+                const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2)
+                console.log(`📦 Tamaño del cache: ${sizeInMB} MB`)
+
+                if (sizeInBytes > 2 * 1024 * 1024) { // Si es mayor a 2MB
+                    console.warn('⚠️ Cache muy grande, limpiando...')
+                    await AsyncStorage.removeItem(CACHE_DATA_KEY)
+                    return false
+                }
+
+                const cachedData = JSON.parse(cachedDataString)
+
+                if (cachedData && cachedData.channels && cachedData.filters) {
+                    console.log('📋 Cargando datos del cache a Redux...')
+                    console.log(`📺 Canales en cache: ${cachedData.channels.length}`)
+                    console.log(`🔍 Países en cache: ${cachedData.filters.countries?.length || 0}`)
+
+                    // Cargar datos a Redux (los datos ya están comprimidos apropiadamente)
+                    dispatch(fetchChannels.fulfilled(cachedData.channels))
+                    dispatch(fetchFilters.fulfilled(cachedData.filters))
+
+                    return true
+                }
             }
-            await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(cacheData))
+            return false
         } catch (error) {
-            console.warn('Error setting cache:', error)
+            console.warn('Error loading cached data:', error)
+            console.log('🧹 Limpiando cache corrupto...')
+
+            // Limpiar cache corrupto
+            try {
+                await AsyncStorage.removeItem(CACHE_DATA_KEY)
+                await AsyncStorage.removeItem(CACHE_KEY)
+            } catch (cleanError) {
+                console.warn('Error cleaning corrupted cache:', cleanError)
+            }
+
+            return false
+        }
+    }
+
+    const saveCachedData = async (channels, filters) => {
+        try {
+            console.log('💾 Preparando datos para cache...')
+
+            // Comprimir datos para reducir tamaño
+            const compressedData = compressDataForCache(channels, filters)
+            const dataString = JSON.stringify(compressedData)
+
+            // Verificar tamaño antes de guardar
+            const sizeInBytes = new Blob([dataString]).size
+            const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2)
+
+            console.log(`📦 Tamaño de datos comprimidos: ${sizeInMB} MB`)
+
+            if (sizeInBytes > 2 * 1024 * 1024) { // Límite de 2MB
+                console.warn('⚠️ Datos muy grandes para cache, saltando...')
+                return
+            }
+
+            await AsyncStorage.setItem(CACHE_DATA_KEY, dataString)
+
+            const cacheInfo = {
+                timestamp: Date.now(),
+                version: '1.0.0',
+                size: sizeInMB + ' MB'
+            }
+            await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(cacheInfo))
+
+            console.log('✅ Datos guardados en cache exitosamente')
+        } catch (error) {
+            console.warn('Error saving cached data:', error)
+
+            if (error.message?.includes('quota') || error.message?.includes('storage')) {
+                console.log('🚫 Storage lleno, limpiando cache antiguo...')
+                try {
+                    await AsyncStorage.removeItem(CACHE_DATA_KEY)
+                    await AsyncStorage.removeItem(CACHE_KEY)
+                } catch (cleanError) {
+                    console.warn('Error cleaning storage:', cleanError)
+                }
+            }
         }
     }
 
@@ -65,42 +197,41 @@ export const useInitialLoad = () => {
             // Paso 1: Cargar canales (50% del progreso)
             console.log('📡 Cargando canales...')
             setProgress(5)
-            
-            // Una sola llamada a canales
+
             const channels = await channelsService.getChannels()
             setProgress(50)
-            
+
             console.log(`✅ Canales cargados: ${channels.length}`)
 
             // Paso 2: Cargar filtros (35% adicional = 85% total)
             console.log('🔍 Cargando filtros...')
             setProgress(55)
-            
+
             const filters = await filtersService.getAllFilters()
             setProgress(85)
-            
+
             console.log('✅ Filtros cargados')
 
-            // Paso 3: Procesar datos (10% adicional = 95% total)
+            // Paso 3: Guardar en Redux Y cache (10% adicional = 95% total)
             console.log('⚙️ Procesando datos...')
             setProgress(90)
-            
-            // Dispatch a Redux - SIN llamadas adicionales al API
+
+            // Dispatch a Redux
             dispatch(fetchChannels.fulfilled(channels))
             dispatch(fetchFilters.fulfilled(filters))
-            
+
+            // Guardar en cache para próximas sesiones (async, no bloquea)
+            saveCachedData(channels, filters).catch(console.warn)
+
             setProgress(95)
 
             // Paso 4: Finalizar (5% adicional = 100% total)
             console.log('🎉 Carga inicial completa')
             setProgress(100)
-            
-            // Marcar como completo en cache
-            await setCacheComplete()
-            
+
             // Pequeña pausa antes de completar
             await new Promise(resolve => setTimeout(resolve, 500))
-            
+
         } catch (error) {
             console.error('❌ Error en carga inicial:', error)
             setError(error.message)
@@ -119,20 +250,35 @@ export const useInitialLoad = () => {
         const initializeApp = async () => {
             try {
                 hasInitializedRef.current = true
-                
-                // Verificar si ya tenemos datos en cache válidos
-                const isCacheValid = await checkCacheValidity()
-                
-                if (isCacheValid) {
-                    console.log('📋 Usando datos del cache')
+
+                // PRIMERO: Verificar si ya hay datos en Redux (puede ser de persistencia)
+                if (channelsInRedux.length > 0 && filtersInRedux.length > 0) {
+                    console.log('📊 Datos ya disponibles en Redux')
                     setProgress(100)
                     setIsLoading(false)
                     return
                 }
 
-                // Si no hay cache válido, cargar datos
+                // SEGUNDO: Verificar si hay datos válidos en cache
+                const isCacheValid = await checkCacheValidity()
+
+                if (isCacheValid) {
+                    console.log('📋 Usando datos del cache')
+                    const loaded = await loadCachedData()
+
+                    if (loaded) {
+                        setProgress(100)
+                        setIsLoading(false)
+                        return
+                    } else {
+                        console.log('⚠️ Cache inválido, cargando datos frescos...')
+                    }
+                }
+
+                // TERCERO: Si no hay datos válidos, cargar desde API
+                console.log('🌐 Cargando datos desde API...')
                 await loadInitialData()
-                
+
             } catch (error) {
                 console.error('❌ Error inicializando app:', error)
                 setError(error.message)
@@ -141,7 +287,7 @@ export const useInitialLoad = () => {
         }
 
         initializeApp()
-    }, [loadInitialData])
+    }, [loadInitialData, channelsInRedux.length, filtersInRedux.length])
 
     const retryLoad = useCallback(() => {
         isLoadingRef.current = false
@@ -153,6 +299,7 @@ export const useInitialLoad = () => {
     const forceReload = useCallback(async () => {
         try {
             await AsyncStorage.removeItem(CACHE_KEY)
+            await AsyncStorage.removeItem(CACHE_DATA_KEY)
             isLoadingRef.current = false
             hasInitializedRef.current = false
             setError(null)
@@ -162,11 +309,26 @@ export const useInitialLoad = () => {
         }
     }, [loadInitialData])
 
+    // Función pública para limpiar cache
+    const clearCache = useCallback(async () => {
+        try {
+            console.log('🧹 Limpiando cache...')
+            await AsyncStorage.removeItem(CACHE_KEY)
+            await AsyncStorage.removeItem(CACHE_DATA_KEY)
+            console.log('✅ Cache limpiado exitosamente')
+            return true
+        } catch (error) {
+            console.error('❌ Error limpiando cache:', error)
+            return false
+        }
+    }, [])
+
     return {
         isLoading,
         progress,
         error,
         retryLoad,
         forceReload,
+        clearCache, // NUEVA función para usar en componentes
     }
 }

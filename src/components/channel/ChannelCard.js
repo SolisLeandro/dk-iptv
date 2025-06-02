@@ -1,4 +1,3 @@
-// src/components/channel/ChannelCard.js
 import {
     View,
     Text,
@@ -64,6 +63,10 @@ export default function ChannelCard({
 
     const bestQuality = getBestQuality()
 
+    // Valores por defecto si no hay datos de streams
+    const streamCount = channel.streamCount || 0
+    const hasHDStreams = channel.hasHDStreams || false
+
     return (
         <TouchableOpacity
             style={[styles.container, { backgroundColor: colors.surface }, style]}
@@ -84,10 +87,10 @@ export default function ChannelCard({
                     )}
                 </View>
 
-                {/* Stream Quality Badge */}
+                {/* Stream Quality Badge - Solo si hay datos */}
                 {bestQuality && (
                     <View style={[styles.qualityBadge, { 
-                        backgroundColor: channel.hasHDStreams ? '#4CAF50' : '#FF9800' 
+                        backgroundColor: hasHDStreams ? '#4CAF50' : '#FF9800' 
                     }]}>
                         <Text style={styles.qualityText}>{bestQuality}</Text>
                     </View>
@@ -123,16 +126,16 @@ export default function ChannelCard({
                     </Text>
                 </View>
 
-                {/* Stream Info */}
+                {/* Stream Info - Solo mostrar si hay datos */}
                 <View style={styles.streamInfo}>
                     <View style={styles.streamIndicator}>
                         <Ionicons name="radio" size={12} color={colors.primary} />
                         <Text style={[styles.streamText, { color: colors.primary }]}>
-                            {channel.streamCount || 0} stream{channel.streamCount !== 1 ? 's' : ''}
+                            {streamCount} stream{streamCount !== 1 ? 's' : ''}
                         </Text>
                     </View>
                     
-                    {channel.hasHDStreams && (
+                    {hasHDStreams && (
                         <View style={styles.hdIndicator}>
                             <Ionicons name="tv" size={12} color={colors.success} />
                             <Text style={[styles.hdText, { color: colors.success }]}>HD</Text>
@@ -195,21 +198,6 @@ const styles = StyleSheet.create({
         borderRadius: 4,
     },
     qualityText: {
-        color: '#FFFFFF',
-        fontSize: 10,
-        fontWeight: '700',
-    },
-    streamCountBadge: {
-        position: 'absolute',
-        bottom: 8,
-        left: 8,
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    streamCountText: {
         color: '#FFFFFF',
         fontSize: 10,
         fontWeight: '700',
