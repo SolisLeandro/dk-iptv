@@ -213,11 +213,11 @@ const styles = StyleSheet.create({
     },
     searchBar: {
         marginTop: 8,
-        paddingBottom: 90
     },
     content: {
         flex: 1,
         paddingTop: 25,
+        paddingBottom: 90
     },
     sortContainer: {
         paddingHorizontal: 20,
