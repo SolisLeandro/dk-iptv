@@ -155,12 +155,6 @@ export default function QualitySelector({
                             )
                         })}
                     </ScrollView>
-
-                    <View style={[styles.footer, { borderTopColor: colors.border }]}>
-                        <Text style={[styles.footerText, { color: colors.textMuted }]}>
-                            💡 La calidad automática se ajusta según tu conexión
-                        </Text>
-                    </View>
                 </View>
             </Modal>
         </View>

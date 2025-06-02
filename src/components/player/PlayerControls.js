@@ -157,12 +157,6 @@ export default function PlayerControls({
                             </Text>
                         </TouchableOpacity>
                     </View>
-
-                    {/* Live Indicator */}
-                    <View style={styles.liveIndicator}>
-                        <View style={styles.liveDot} />
-                        <Text style={styles.liveText}>EN VIVO</Text>
-                    </View>
                 </View>
             </LinearGradient>
         </View>
@@ -182,6 +176,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        paddingTop: 30,
+        paddingHorizontal: 50
     },
     backButton: {
         padding: 8,

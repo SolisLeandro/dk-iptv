@@ -76,7 +76,7 @@ export default function VideoPlayer({ streams, channel, onBack }) {
         if (showControls) {
             controlsTimeoutRef.current = setTimeout(() => {
                 setShowControls(false)
-            }, 3000)
+            }, 5000)
         }
 
         return () => {
@@ -125,7 +125,7 @@ export default function VideoPlayer({ streams, channel, onBack }) {
                 StatusBar.setHidden(false)
             }
             setIsFullscreen(!isFullscreen)
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+            //Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
         } catch (error) {
             console.error('Error toggling fullscreen:', error)
         }
@@ -150,13 +150,13 @@ export default function VideoPlayer({ streams, channel, onBack }) {
             
             player.replace(source)
 
-            Haptics.selectionAsync()
+            //Haptics.selectionAsync()
         }
     }
 
     const toggleControls = () => {
         setShowControls(!showControls)
-        Haptics.selectionAsync()
+        //Haptics.selectionAsync()
     }
 
     const handleBack = async () => {
@@ -370,6 +370,7 @@ const styles = StyleSheet.create({
         padding: 16,
         borderTopWidth: 1,
         borderTopColor: 'rgba(255, 255, 255, 0.1)',
+        paddingBottom: 50
     },
     debugButtonSmall: {
         flexDirection: 'row',
