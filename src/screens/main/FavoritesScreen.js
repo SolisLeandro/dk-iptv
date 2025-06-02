@@ -105,7 +105,10 @@ export default function FavoritesScreen({ navigation }) {
                     end={{ x: 1, y: 1 }}
                 >
                     <View style={styles.headerContent}>
-                        <Text style={styles.headerTitle}>❤️ Favoritos</Text>
+                        <View style={styles.headerTitleContainer}>
+                            <Ionicons name="heart" size={24} color="#FFFFFF" style={styles.headerIcon} />
+                            <Text style={styles.headerTitle}>Favoritos</Text>
+                        </View>
                     </View>
                 </LinearGradient>
 
@@ -130,8 +133,10 @@ export default function FavoritesScreen({ navigation }) {
                 end={{ x: 1, y: 1 }}
             >
                 <View style={styles.headerContent}>
-                    <Text style={styles.headerTitle}>❤️ Favoritos</Text>
-                    
+                    <View style={styles.headerTitleContainer}>
+                        <Ionicons name="heart" size={24} color="#FFFFFF" style={styles.headerIcon} />
+                        <Text style={styles.headerTitle}>Favoritos</Text>
+                    </View>
                 </View>
 
                 {/* Búsqueda */}
@@ -157,9 +162,12 @@ export default function FavoritesScreen({ navigation }) {
 
                 {/* Favorites Grid */}
                 <View style={styles.channelsSection}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                        Canales Favoritos ({filteredFavorites.length})
-                    </Text>
+                    <View style={styles.titleContainer}>
+                        <Ionicons name="heart" size={20} color={colors.primary} style={styles.sectionIcon} />
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                            Canales Favoritos ({filteredFavorites.length})
+                        </Text>
+                    </View>
                     <ChannelGrid
                         channels={filteredFavorites}
                         searchQuery=""
@@ -186,6 +194,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         height: 70
     },
+    headerTitleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    headerIcon: {
+        marginRight: 8,
+    },
     headerTitle: {
         fontSize: 24,
         fontWeight: '800',
@@ -198,6 +213,7 @@ const styles = StyleSheet.create({
     },
     searchBar: {
         marginTop: 8,
+        paddingBottom: 90
     },
     content: {
         flex: 1,
@@ -232,9 +248,16 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         flex: 1,
     },
+    titleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    sectionIcon: {
+        marginRight: 8,
+    },
     sectionTitle: {
         fontSize: 20,
         fontWeight: '700',
-        marginBottom: 12,
     },
 })

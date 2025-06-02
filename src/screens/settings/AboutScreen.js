@@ -86,7 +86,10 @@ export default function AboutScreen({ navigation }) {
                     >
                         <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>ℹ️ Acerca de</Text>
+                    <View style={styles.headerTitleContainer}>
+                        <Ionicons name="information-circle" size={20} color="#FFFFFF" style={styles.headerIcon} />
+                        <Text style={styles.headerTitle}>Acerca de</Text>
+                    </View>
                 </View>
             </LinearGradient>
 
@@ -107,7 +110,10 @@ export default function AboutScreen({ navigation }) {
 
                 {/* App Information */}
                 <View style={[styles.section, { backgroundColor: colors.surface }]}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Información de la App</Text>
+                    <View style={styles.sectionTitleContainer}>
+                        <Ionicons name="information" size={18} color={colors.primary} style={styles.sectionIcon} />
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Información de la App</Text>
+                    </View>
                     <InfoRow label="Versión" value={appInfo.version} />
                     <InfoRow label="Desarrollador" value={appInfo.author} />
                     <InfoRow label="Plataforma" value={Constants.platform?.ios ? 'iOS' : 'Android'} />
@@ -115,7 +121,10 @@ export default function AboutScreen({ navigation }) {
 
                 {/* Links */}
                 <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Enlaces</Text>
+                    <View style={styles.sectionTitleContainer}>
+                        <Ionicons name="link" size={18} color={colors.primary} style={styles.sectionIcon} />
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Enlaces</Text>
+                    </View>
                     {links.map((link, index) => (
                         <LinkItem key={index} item={link} />
                     ))}
@@ -146,6 +155,13 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
         marginRight: 16,
+    },
+    headerTitleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    headerIcon: {
+        marginRight: 8,
     },
     headerTitle: {
         fontSize: 20,
@@ -189,10 +205,17 @@ const styles = StyleSheet.create({
         padding: 16,
         borderRadius: 12,
     },
+    sectionTitleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    sectionIcon: {
+        marginRight: 8,
+    },
     sectionTitle: {
         fontSize: 18,
         fontWeight: '600',
-        marginBottom: 16,
     },
     infoRow: {
         flexDirection: 'row',

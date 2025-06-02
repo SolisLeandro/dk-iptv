@@ -93,13 +93,6 @@ export default function ChannelCard({
                     </View>
                 )}
 
-                {/* Stream Count */}
-                {channel.streamCount > 1 && (
-                    <View style={[styles.streamCountBadge, { backgroundColor: colors.primary }]}>
-                        <Text style={styles.streamCountText}>{channel.streamCount}</Text>
-                    </View>
-                )}
-
                 {/* Status Icons */}
                 <View style={styles.statusIcons}>
                     {isChannelFeatured && (

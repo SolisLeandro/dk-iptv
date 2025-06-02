@@ -26,10 +26,13 @@ export default function FilterDrawer({ onClose }) {
         isLoading
     } = useFilters()
 
-    const FilterSection = ({ title, data, selectedValue, onSelect, keyField = 'code', nameField = 'name' }) => (
-        <View style={styles.filterSection}>
-            <Text style={[styles.filterTitle, { color: colors.text }]}>{title}</Text>
-            
+    const FilterSection = ({ title, data, selectedValue, onSelect, keyField = 'code', nameField = 'name', icon }) => (
+        <View style={[styles.filterSection, { backgroundColor: colors.background }]}>
+            <View style={styles.filterTitleContainer}>
+                <Ionicons name={icon} size={18} color={colors.primary} style={styles.filterIcon} />
+                <Text style={[styles.filterTitle, { color: colors.text }]}>{title}</Text>
+            </View>
+
             {!data || data.length === 0 ? (
                 <View style={styles.emptyState}>
                     <Text style={[styles.emptyText, { color: colors.textMuted }]}>
@@ -83,7 +86,10 @@ export default function FilterDrawer({ onClose }) {
                 end={{ x: 1, y: 1 }}
             >
                 <View style={styles.headerContent}>
-                    <Text style={styles.headerTitle}>🔍 Filtros</Text>
+                    <View style={styles.headerTitleContainer}>
+                        <Ionicons name="filter" size={20} color="#FFFFFF" style={styles.headerIcon} />
+                        <Text style={styles.headerTitle}>Filtros</Text>
+                    </View>
                     <TouchableOpacity style={styles.closeButton} onPress={onClose}>
                         <Ionicons name="close" size={24} color="#FFFFFF" />
                     </TouchableOpacity>
@@ -99,11 +105,11 @@ export default function FilterDrawer({ onClose }) {
                     {/* Clear Filters Button */}
                     {(selectedCountry || selectedCategory) && (
                         <TouchableOpacity
-                            style={[styles.clearButton, { backgroundColor: colors.button }]}
+                            style={[styles.clearButton, { backgroundColor: colors.border }]}
                             onPress={clearFilters}
                         >
-                            <Ionicons name="refresh" size={20} color={"#FFF"} />
-                            <Text style={[styles.clearButtonText, { color: "#FFF" }]}>
+                            <Ionicons name="refresh" size={20} color="#FFFFFF" />
+                            <Text style={[styles.clearButtonText, { color: "#FFFFFF" }]}>
                                 Limpiar Filtros
                             </Text>
                         </TouchableOpacity>
@@ -111,10 +117,13 @@ export default function FilterDrawer({ onClose }) {
 
                     {/* Active Filters */}
                     {(selectedCountry || selectedCategory) && (
-                        <View style={styles.activeFiltersSection}>
-                            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                                Filtros Activos
-                            </Text>
+                        <View>
+                            <View style={styles.activeTitleContainer}>
+                                <Ionicons name="checkmark-circle" size={18} color={colors.primary} style={styles.activeIcon} />
+                                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                                    Filtros Activos
+                                </Text>
+                            </View>
                             <View style={styles.activeFilters}>
                                 {selectedCountry && (
                                     <TouchableOpacity
@@ -129,7 +138,7 @@ export default function FilterDrawer({ onClose }) {
                                 )}
                                 {selectedCategory && (
                                     <TouchableOpacity
-                                        style={[styles.activeFilter, { backgroundColor: colors.secondary }]}
+                                        style={[styles.activeFilter, { backgroundColor: colors.border }]}
                                         onPress={() => setCategory(null)}
                                     >
                                         <Text style={styles.activeFilterText}>
@@ -144,7 +153,8 @@ export default function FilterDrawer({ onClose }) {
 
                     {/* Countries Filter */}
                     <FilterSection
-                        title="🌍 Países"
+                        title="Países"
+                        icon="globe"
                         data={countries}
                         selectedValue={selectedCountry}
                         onSelect={setCountry}
@@ -154,7 +164,8 @@ export default function FilterDrawer({ onClose }) {
 
                     {/* Categories Filter */}
                     <FilterSection
-                        title="📺 Categorías"
+                        title="Categorías"
+                        icon="grid"
                         data={categories}
                         selectedValue={selectedCategory}
                         onSelect={setCategory}
@@ -182,6 +193,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 20
     },
+    headerTitleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    headerIcon: {
+        marginRight: 8,
+    },
     headerTitle: {
         fontSize: 20,
         fontWeight: '700',
@@ -200,6 +218,8 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         padding: 20,
+        paddingBottom: 120,
+        gap: 20
     },
     clearButton: {
         flexDirection: 'row',
@@ -207,20 +227,23 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 12,
         borderRadius: 8,
-        marginBottom: 20,
     },
     clearButtonText: {
         fontSize: 16,
         fontWeight: '600',
         marginLeft: 8,
     },
-    activeFiltersSection: {
-        marginBottom: 20,
+    activeTitleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    activeIcon: {
+        marginRight: 8,
     },
     sectionTitle: {
         fontSize: 16,
         fontWeight: '600',
-        marginBottom: 12,
     },
     activeFilters: {
         flexDirection: 'row',
@@ -241,13 +264,21 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     filterSection: {
-        flex:1,
-        marginBottom: 24,
+        flex: 1,
+        padding: 15,
+        borderRadius: 8
+    },
+    filterTitleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    filterIcon: {
+        marginRight: 8,
     },
     filterTitle: {
         fontSize: 18,
         fontWeight: '600',
-        marginBottom: 12,
     },
     filterOptions: {
         paddingHorizontal: 10

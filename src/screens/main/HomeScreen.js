@@ -90,9 +90,12 @@ export default function HomeScreen({ navigation }) {
                     />
                 ) : (
                     <View style={styles.channelsSection}>
-                        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                            🔥 Canales Destacados ({filteredFeatured.length})
-                        </Text>
+                        <View style={styles.titleContainer}>
+                            <Ionicons name="flame" size={20} color={colors.primary} style={styles.sectionIcon} />
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                                Canales Destacados ({filteredFeatured.length})
+                            </Text>
+                        </View>
                         <ChannelGrid
                             channels={filteredFeatured}
                             searchQuery=""
@@ -150,15 +153,23 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        paddingTop: 25
+        paddingTop: 25,
+        paddingBottom: 90
     },
     channelsSection: {
         paddingHorizontal: 20,
         flex: 1,
     },
+    titleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    sectionIcon: {
+        marginRight: 8,
+    },
     sectionTitle: {
         fontSize: 20,
         fontWeight: '700',
-        marginBottom: 12,
     },
 })

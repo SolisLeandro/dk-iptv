@@ -64,7 +64,10 @@ export default function SettingsScreen({ navigation }) {
                 end={{ x: 1, y: 1 }}
             >
                 <View style={styles.headerContent}>
-                    <Text style={styles.headerTitle}>⚙️ Configuración</Text>
+                    <View style={styles.headerTitleContainer}>
+                        <Ionicons name="settings" size={24} color="#FFFFFF" style={styles.headerIcon} />
+                        <Text style={styles.headerTitle}>Configuración</Text>
+                    </View>
                 </View>
             </LinearGradient>
 
@@ -103,6 +106,13 @@ const styles = StyleSheet.create({
     },
     headerContent: {
         alignItems: 'center',
+    },
+    headerTitleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    headerIcon: {
+        marginRight: 8,
     },
     headerTitle: {
         fontSize: 24,

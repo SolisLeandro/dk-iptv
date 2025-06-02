@@ -33,17 +33,43 @@ export default function ExploreScreen({ navigation }) {
     const [searchQuery, setSearchQuery] = useState('')
 
     const slideAnim = useRef(new Animated.Value(-width)).current
+    const overlayOpacity = useRef(new Animated.Value(0)).current
 
     const toggleFilters = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
 
-        setShowFilters(!showFilters)
-        Animated.spring(slideAnim, {
-            toValue: showFilters ? -width : 0,
-            friction: 8,
-            tension: 100,
-            useNativeDriver: true,
-        }).start()
+        if (showFilters) {
+            // Cerrar drawer
+            Animated.parallel([
+                Animated.timing(slideAnim, {
+                    toValue: -width,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(overlayOpacity, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: true,
+                })
+            ]).start(() => {
+                setShowFilters(false)
+            })
+        } else {
+            // Abrir drawer
+            setShowFilters(true)
+            Animated.parallel([
+                Animated.timing(slideAnim, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(overlayOpacity, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: true,
+                })
+            ]).start()
+        }
     }
 
     const onRefresh = async () => {
@@ -67,10 +93,13 @@ export default function ExploreScreen({ navigation }) {
                 end={{ x: 1, y: 1 }}
             >
                 <View style={styles.headerTop}>
-                    <Text style={styles.headerTitle}>🔍 Explorar</Text>
+                    <View style={styles.headerTitleContainer}>
+                        <Ionicons name="compass" size={24} color="#FFFFFF" style={styles.headerIcon} />
+                        <Text style={styles.headerTitle}>Explorar</Text>
+                    </View>
                     <TouchableOpacity
                         onPress={toggleFilters}
-                        style={[styles.filterButton, { backgroundColor: colors.surface }]}
+                        style={[styles.filterButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}
                         activeOpacity={0.8}
                     >
                         <Ionicons name="options" size={24} color="#FFFFFF" />
@@ -88,9 +117,12 @@ export default function ExploreScreen({ navigation }) {
 
             <View style={styles.content}>
                 <View style={styles.channelsSection}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                        🌍 {hasActiveFilters ? 'Canales Filtrados' : 'Todos los Canales'} ({filteredCount}/{totalChannels})
-                    </Text>
+                    <View style={styles.titleContainer}>
+                        <Ionicons name="tv" size={20} color={colors.primary} style={styles.sectionIcon} />
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                            {hasActiveFilters ? 'Canales Filtrados' : 'Todos los Canales'} ({filteredCount}/{totalChannels})
+                        </Text>
+                    </View>
                     {hasActiveFilters && (
                         <View style={styles.filterInfo}>
                             <Text style={[styles.filterInfoText, { color: colors.textSecondary }]}>
@@ -115,6 +147,24 @@ export default function ExploreScreen({ navigation }) {
                 </View>
             </View>
 
+            {/* Overlay con animación sincronizada */}
+            {showFilters && (
+                <Animated.View
+                    style={[
+                        styles.overlay,
+                        {
+                            opacity: overlayOpacity,
+                        }
+                    ]}
+                >
+                    <TouchableOpacity
+                        style={styles.overlayTouchable}
+                        onPress={toggleFilters}
+                        activeOpacity={1}
+                    />
+                </Animated.View>
+            )}
+
             {/* Drawer de Filtros */}
             <Animated.View
                 style={[
@@ -124,18 +174,10 @@ export default function ExploreScreen({ navigation }) {
                         backgroundColor: colors.surface,
                     },
                 ]}
+                pointerEvents={showFilters ? 'auto' : 'none'}
             >
                 <FilterDrawer onClose={toggleFilters} />
             </Animated.View>
-
-            {/* Overlay */}
-            {showFilters && (
-                <TouchableOpacity
-                    style={styles.overlay}
-                    onPress={toggleFilters}
-                    activeOpacity={1}
-                />
-            )}
         </View>
     )
 }
@@ -155,6 +197,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         height: 70
     },
+    headerTitleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    headerIcon: {
+        marginRight: 8,
+    },
     headerTitle: {
         fontSize: 24,
         fontWeight: '800',
@@ -163,31 +212,30 @@ const styles = StyleSheet.create({
     filterButton: {
         padding: 12,
         borderRadius: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
     },
     searchBar: {
         marginTop: 8,
     },
     content: {
         flex: 1,
-        paddingTop: 25
+        paddingTop: 25,
+        paddingBottom: 90
     },
     channelsSection: {
         paddingHorizontal: 20,
         flex: 1,
     },
+    titleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    sectionIcon: {
+        marginRight: 8,
+    },
     sectionTitle: {
         fontSize: 20,
         fontWeight: '700',
-        marginBottom: 12,
-    },
-    filterDrawer: {
-        position: 'absolute',
-        left: 0,
-        top: 0,
-        bottom: 0,
-        width: width * 0.85,
-        zIndex: 1000,
     },
     overlay: {
         position: 'absolute',
@@ -197,6 +245,22 @@ const styles = StyleSheet.create({
         bottom: 0,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         zIndex: 999,
+    },
+    overlayTouchable: {
+        flex: 1,
+    },
+    filterDrawer: {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: width * 0.85,
+        zIndex: 1000,
+        elevation: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 2, height: 0 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
     },
     filterInfo: {
         marginBottom: 12,
