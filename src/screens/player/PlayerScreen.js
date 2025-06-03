@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react'
 import {
     View,
@@ -6,16 +5,19 @@ import {
     StatusBar,
     Alert,
     BackHandler,
+    Platform,
 } from 'react-native'
 
 import { usePlayer } from '../../hooks/usePlayer'
 import { useOrientation } from '../../hooks/useOrientation'
+import { useTheme } from '../../hooks/useTheme'
 import { streamsService } from '../../services/api/streams'
 import VideoPlayer from '../../components/player/VideoPlayer'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 export default function PlayerScreen({ route, navigation }) {
     const { channel } = route.params
+    const { colors, isDark } = useTheme()
     const { playChannel, currentChannel, stopPlayback } = usePlayer()
     const { lockPortrait } = useOrientation()
     const [selectedStreamIndex, setSelectedStreamIndex] = useState(0)
@@ -74,6 +76,21 @@ export default function PlayerScreen({ route, navigation }) {
     const handleBack = async () => {
         await lockPortrait()
         stopPlayback()
+        
+        // IMPORTANTE: Restaurar configuración del tema al salir
+        try {
+            if (Platform.OS === 'android') {
+                // Restaurar StatusBar al tema correspondiente
+                StatusBar.setHidden(false, 'fade')
+                StatusBar.setBarStyle(isDark ? 'light-content' : 'dark-content', true)
+                
+                // Nota: NavigationBar se restaura en VideoPlayer component
+                console.log('🔄 Configuración del tema restaurada en PlayerScreen')
+            }
+        } catch (error) {
+            console.warn('⚠️ Error restaurando configuración en PlayerScreen:', error)
+        }
+        
         navigation.goBack()
     }
 

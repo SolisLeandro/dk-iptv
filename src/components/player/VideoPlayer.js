@@ -7,6 +7,7 @@ import {
     Text,
     StatusBar,
     Alert,
+    Platform
 } from 'react-native'
 import { VideoView, useVideoPlayer } from 'expo-video'
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
@@ -25,13 +26,22 @@ import StreamDebugger from './StreamDebugger'
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
 
 export default function VideoPlayer({ streams, channel, onBack }) {
-    const { colors } = useTheme()
+    const { colors, isDark } = useTheme()
     const [isFullscreen, setIsFullscreen] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [currentStreamIndex, setCurrentStreamIndex] = useState(0)
     const [showControls, setShowControls] = useState(true)
     const [error, setError] = useState(null)
     const [showDebugger, setShowDebugger] = useState(false)
+
+    // Referencias para restaurar configuración original
+    const originalThemeStateRef = useRef({
+        isDark,
+        colors,
+        statusBarStyle: isDark ? 'light-content' : 'dark-content',
+        navigationBarColor: isDark ? colors.surface : '#FFFFFF',
+        navigationBarStyle: isDark ? 'light' : 'dark'
+    })
 
     const controlsTimeoutRef = useRef(null)
     const currentStream = streams[currentStreamIndex]
@@ -48,7 +58,39 @@ export default function VideoPlayer({ streams, channel, onBack }) {
         player.play()
     })
 
+    // Función para restaurar configuración del tema
+    const restoreThemeConfiguration = async () => {
+        try {
+            const original = originalThemeStateRef.current
+            console.log('🔄 Restaurando configuración original del tema...')
+
+            // Restaurar StatusBar
+            StatusBar.setHidden(false, 'fade')
+            StatusBar.setBarStyle(original.statusBarStyle, true)
+
+            // Restaurar NavigationBar en Android
+            if (Platform.OS === 'android') {
+                await NavigationBar.setVisibilityAsync('visible')
+                await NavigationBar.setBackgroundColorAsync(original.navigationBarColor)
+                await NavigationBar.setButtonStyleAsync(original.navigationBarStyle)
+            }
+
+            console.log('✅ Configuración del tema restaurada')
+        } catch (error) {
+            console.warn('⚠️ Error restaurando configuración del tema:', error)
+        }
+    }
+
     useEffect(() => {
+        // Guardar estado original del tema al montar
+        originalThemeStateRef.current = {
+            isDark,
+            colors,
+            statusBarStyle: isDark ? 'light-content' : 'dark-content',
+            navigationBarColor: isDark ? colors.surface : '#FFFFFF',
+            navigationBarStyle: isDark ? 'light' : 'dark'
+        }
+
         // Activar keep awake de forma asíncrona
         const setupKeepAwake = async () => {
             try {
@@ -70,8 +112,22 @@ export default function VideoPlayer({ streams, channel, onBack }) {
             if (controlsTimeoutRef.current) {
                 clearTimeout(controlsTimeoutRef.current)
             }
+
+            // IMPORTANTE: Restaurar configuración al desmontar el componente
+            restoreThemeConfiguration()
         }
     }, [])
+
+    // Actualizar referencia cuando cambie el tema (por si el usuario cambia tema durante reproducción)
+    useEffect(() => {
+        originalThemeStateRef.current = {
+            isDark,
+            colors,
+            statusBarStyle: isDark ? 'light-content' : 'dark-content',
+            navigationBarColor: isDark ? colors.surface : '#FFFFFF',
+            navigationBarStyle: isDark ? 'light' : 'dark'
+        }
+    }, [isDark, colors])
 
     // Función para configurar el timeout de los controles
     const startControlsTimeout = () => {
@@ -139,16 +195,9 @@ export default function VideoPlayer({ streams, channel, onBack }) {
                     console.warn('Error hiding navigation bar:', navError)
                 }
             } else {
-                // Salir de pantalla completa
+                // Salir de pantalla completa - RESTAURAR configuración del tema
                 await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT)
-                StatusBar.setHidden(false, 'fade')
-                
-                // Mostrar navegación de Android
-                try {
-                    await NavigationBar.setVisibilityAsync('visible')
-                } catch (navError) {
-                    console.warn('Error showing navigation bar:', navError)
-                }
+                await restoreThemeConfiguration()
             }
             setIsFullscreen(!isFullscreen)
         } catch (error) {
@@ -188,15 +237,9 @@ export default function VideoPlayer({ streams, channel, onBack }) {
     }
 
     const handleBack = async () => {
-        // Restaurar configuración normal
+        // Restaurar configuración completa
         await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT)
-        StatusBar.setHidden(false, 'fade')
-        
-        try {
-            await NavigationBar.setVisibilityAsync('visible')
-        } catch (navError) {
-            console.warn('Error showing navigation bar on back:', navError)
-        }
+        await restoreThemeConfiguration()
         
         player.pause()
         onBack()

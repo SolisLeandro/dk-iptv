@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react'
-import { useColorScheme } from 'react-native'
+import { useColorScheme, Platform, StatusBar } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as NavigationBar from 'expo-navigation-bar'
 import { lightTheme, darkTheme } from '../theme'
 
 const ThemeContext = createContext()
@@ -38,6 +39,27 @@ const themeReducer = (state, action) => {
     }
 }
 
+// Función para actualizar la barra de navegación de Android
+const updateNavigationBar = async (isDark, colors) => {
+    if (Platform.OS === 'android') {
+        try {
+            // Configurar color de fondo de la barra de navegación
+            await NavigationBar.setBackgroundColorAsync(
+                isDark ? colors.surface : '#FFFFFF'
+            )
+            
+            // Configurar estilo de los botones (light/dark)
+            await NavigationBar.setButtonStyleAsync(
+                isDark ? 'light' : 'dark'
+            )
+            
+            console.log(`🎨 Navigation bar actualizada: ${isDark ? 'dark' : 'light'}`)
+        } catch (error) {
+            console.warn('⚠️ Error actualizando navigation bar:', error)
+        }
+    }
+}
+
 export const ThemeProvider = ({ children }) => {
     const systemColorScheme = useColorScheme()
 
@@ -56,6 +78,17 @@ export const ThemeProvider = ({ children }) => {
         console.log('🎨 Sistema cambió a:', systemColorScheme)
         dispatch({ type: 'SET_SYSTEM_THEME', payload: systemColorScheme || 'light' })
     }, [systemColorScheme])
+
+    // Efecto para actualizar la barra de navegación cuando cambie el tema
+    useEffect(() => {
+        updateNavigationBar(state.isDark, state.colors)
+        
+        // También actualizar StatusBar
+        if (Platform.OS === 'android') {
+            StatusBar.setBackgroundColor(state.colors.surface, true)
+            StatusBar.setBarStyle(state.isDark ? 'light-content' : 'dark-content', true)
+        }
+    }, [state.isDark, state.colors])
 
     const loadTheme = async () => {
         try {

@@ -66,15 +66,7 @@ export default function ChannelGrid({
     // Memoizar keyExtractor
     const keyExtractor = useCallback((item) => item.id, [])
 
-    // Memoizar getItemLayout para mejor performance
-    const getItemLayout = useCallback((data, index) => {
-        const itemHeight = 200 // Altura estimada de cada card + margin
-        return {
-            length: itemHeight,
-            offset: itemHeight * Math.floor(index / numColumns),
-            index,
-        }
-    }, [numColumns])
+    // REMOVIDO getItemLayout - causa problemas en grids complejas
 
     const renderEmpty = useCallback(() => {
         if (loading) {
@@ -125,19 +117,21 @@ export default function ChannelGrid({
                 renderItem={renderChannelItem}
                 keyExtractor={keyExtractor}
                 numColumns={numColumns}
+                key={numColumns} // AGREGADO: force re-render when columns change
                 columnWrapperStyle={numColumns > 1 ? styles.row : null}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
                 removeClippedSubviews={true}
-                maxToRenderPerBatch={10}
-                windowSize={10}
-                initialNumToRender={6}
-                updateCellsBatchingPeriod={50}
-                getItemLayout={getItemLayout}
+                maxToRenderPerBatch={6} // REDUCIDO para mejor performance
+                windowSize={5} // REDUCIDO
+                initialNumToRender={4} // REDUCIDO
+                updateCellsBatchingPeriod={100} // AUMENTADO para más estabilidad
                 refreshControl={refreshControl}
-                // Optimizaciones adicionales
+                // REMOVIDAS optimizaciones problemáticas
                 disableVirtualization={false}
                 legacyImplementation={false}
+                // AGREGADO: mejor spacing consistency
+                ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
             />
         </View>
     )
@@ -159,8 +153,9 @@ const styles = StyleSheet.create({
     row: {
         justifyContent: 'space-between',
         paddingHorizontal: 4,
+        marginBottom: 16, // MOVIDO margin aquí
     },
     channelCard: {
-        marginBottom: 16,
+        // REMOVIDO marginBottom de aquí
     },
 })
