@@ -1,50 +1,53 @@
-# Welcome to your Expo app 👋
+# 📺 DK IPTV v1.0.2 - Primera Release
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+¡Bienvenidos al primer lanzamiento oficial de **DK IPTV**! 🎉
 
-## Get started
+## 🚀 ¿Qué es DK IPTV?
 
-1. Install dependencies
+**DK IPTV** es una aplicación móvil gratuita que te permite acceder a **canales IPTV** de todo el mundo. Desarrollada con React Native y optimizada para Android, ofrece una experiencia fluida para ver televisión en vivo desde tu dispositivo móvil.
 
-   ```bash
-   npm install
-   ```
+## ✨ Características Principales
 
-2. Start the app
+### 📡 **Acceso a Canales**
+- Canales de **noticias, deportes, entretenimiento, documentales** y más
+- Streams en **múltiples calidades** (1080p, 720p, 480p, etc.)
+- **Múltiples fuentes** por canal para mayor disponibilidad
 
-   ```bash
-   npx expo start
-   ```
+### 🔍 **Búsqueda y Filtros Avanzados**
+- **Búsqueda en tiempo real** por nombre de canal
+- **Filtros por país** - Encuentra canales de tu región
+- **Filtros por categoría** - Deportes, noticias, entretenimiento, etc.
 
-In the output, you'll find options to open the app in a
+### ⭐ **Sistema de Favoritos y Destacados**
+- **Marca canales como favoritos** para acceso rápido
+- **Canales destacados** en la pantalla principal
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### 🌐 **Gestión Inteligente de Datos**
+- **Cache inteligente** para carga rápida
+- **Actualización de datos** manual cuando sea necesario
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
-## Get a fresh project
+## 📊 **Datos y Fuentes**
 
-When you're ready, run:
+### 🌍 **Cobertura Global**
+- Canales de **más de 100 países**
+- **Múltiples idiomas** soportados
+- **Categorías diversas**: Noticias, Deportes, Entretenimiento, Documentales, Infantiles, etc.
 
-```bash
-npm run reset-project
-```
+### 📡 **API IPTV-ORG**
+- Utiliza la **API oficial de IPTV-ORG**
+- **Datos actualizados** regularmente
+- **Streams verificados** y filtrados
+- **Metadatos completos** de cada canal
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 📱 **Instalación**
 
-## Learn more
+### 📥 **Descarga Directa**
+1. Descarga el **APK** desde la sección de releases
+2. **Habilita instalación** de fuentes desconocidas en Android
+3. **Instala la aplicación**
+4. ¡**Disfruta** de miles de canales!
 
-To learn more about developing your project with Expo, look at the following resources:
+**¡Disfruta viendo televisión de todo el mundo con DK IPTV! 📺✨**
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+*¿Te gusta la app? ⭐ Dale una estrella en GitHub y compártela con tus amigos.*
