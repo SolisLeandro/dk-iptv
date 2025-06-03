@@ -39,6 +39,11 @@ export default function AboutScreen({ navigation }) {
             icon: 'tv',
             url: 'https://github.com/iptv-org/api',
         },
+        {
+            title: 'Versiones del App',
+            icon: 'download',
+            url: 'https://github.com/SolisLeandro/dk-iptv/releases',
+        },
     ]
 
     const handleLinkPress = async (url) => {
