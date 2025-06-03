@@ -25,6 +25,9 @@ export const useInitialLoad = () => {
     const isLoadingRef = useRef(false)
     const hasInitializedRef = useRef(false)
 
+    // NUEVO: Estado para controlar cuándo empezar la carga
+    const [shouldStartLoading, setShouldStartLoading] = useState(false)
+
     const checkCacheValidity = async () => {
         try {
             const cacheData = await AsyncStorage.getItem(CACHE_KEY)
@@ -60,32 +63,6 @@ export const useInitialLoad = () => {
             filters: filters,
             compressed: true,
             timestamp: Date.now()
-        }
-    }
-
-    // Función para expandir datos del cache
-    const expandCachedData = (cachedData, fullChannels) => {
-        if (!cachedData.compressed) {
-            return cachedData // Datos no comprimidos (cache viejo)
-        }
-
-        // Crear un mapa para búsqueda rápida
-        const channelMap = new Map(fullChannels.map(ch => [ch.id, ch]))
-
-        // Expandir datos comprimidos
-        const expandedChannels = cachedData.channels.map(compressedChannel => {
-            const fullChannel = channelMap.get(compressedChannel.id)
-            return fullChannel ? {
-                ...fullChannel,
-                streamCount: compressedChannel.streamCount,
-                hasHDStreams: compressedChannel.hasHDStreams,
-                availableQualities: compressedChannel.availableQualities,
-            } : compressedChannel
-        })
-
-        return {
-            channels: expandedChannels,
-            filters: cachedData.filters
         }
     }
 
@@ -180,6 +157,12 @@ export const useInitialLoad = () => {
     }
 
     const loadInitialData = useCallback(async () => {
+        // NUEVO: No cargar si no se debe empezar
+        if (!shouldStartLoading) {
+            console.log('⏸️ Esperando para empezar la carga de datos...')
+            return
+        }
+
         // Evitar múltiples llamadas simultáneas
         if (isLoadingRef.current) {
             console.log('⚠️ Carga ya en progreso, saltando...')
@@ -239,60 +222,77 @@ export const useInitialLoad = () => {
             isLoadingRef.current = false
             setIsLoading(false)
         }
-    }, [dispatch])
+    }, [dispatch, shouldStartLoading]) // AGREGADO shouldStartLoading como dependencia
 
+    // NUEVO: Hook para activar la carga cuando se permita
     useEffect(() => {
-        // Evitar inicialización múltiple
-        if (hasInitializedRef.current) {
-            return
-        }
+        if (shouldStartLoading && !hasInitializedRef.current) {
+            const initializeApp = async () => {
+                try {
+                    hasInitializedRef.current = true
 
-        const initializeApp = async () => {
-            try {
-                hasInitializedRef.current = true
-
-                // PRIMERO: Verificar si ya hay datos en Redux (puede ser de persistencia)
-                if (channelsInRedux.length > 0 && filtersInRedux.length > 0) {
-                    console.log('📊 Datos ya disponibles en Redux')
-                    setProgress(100)
-                    setIsLoading(false)
-                    return
-                }
-
-                // SEGUNDO: Verificar si hay datos válidos en cache
-                const isCacheValid = await checkCacheValidity()
-
-                if (isCacheValid) {
-                    console.log('📋 Usando datos del cache')
-                    const loaded = await loadCachedData()
-
-                    if (loaded) {
+                    // PRIMERO: Verificar si ya hay datos en Redux (puede ser de persistencia)
+                    if (channelsInRedux.length > 0 && filtersInRedux.length > 0) {
+                        console.log('📊 Datos ya disponibles en Redux')
                         setProgress(100)
                         setIsLoading(false)
                         return
-                    } else {
-                        console.log('⚠️ Cache inválido, cargando datos frescos...')
                     }
+
+                    // SEGUNDO: Verificar si hay datos válidos en cache
+                    const isCacheValid = await checkCacheValidity()
+
+                    if (isCacheValid) {
+                        console.log('📋 Usando datos del cache')
+                        const loaded = await loadCachedData()
+
+                        if (loaded) {
+                            setProgress(100)
+                            setIsLoading(false)
+                            return
+                        } else {
+                            console.log('⚠️ Cache inválido, cargando datos frescos...')
+                        }
+                    }
+
+                    // TERCERO: Si no hay datos válidos, cargar desde API
+                    console.log('🌐 Cargando datos desde API...')
+                    await loadInitialData()
+
+                } catch (error) {
+                    console.error('❌ Error inicializando app:', error)
+                    setError(error.message)
+                    setIsLoading(false)
                 }
-
-                // TERCERO: Si no hay datos válidos, cargar desde API
-                console.log('🌐 Cargando datos desde API...')
-                await loadInitialData()
-
-            } catch (error) {
-                console.error('❌ Error inicializando app:', error)
-                setError(error.message)
-                setIsLoading(false)
             }
-        }
 
-        initializeApp()
-    }, [loadInitialData, channelsInRedux.length, filtersInRedux.length])
+            initializeApp()
+        }
+    }, [shouldStartLoading, loadInitialData, channelsInRedux.length, filtersInRedux.length])
+
+    // NUEVO: Función para permitir la carga (será llamada desde App.js)
+    const allowLoading = useCallback(() => {
+        console.log('🎯 Permitiendo carga de datos...')
+        setShouldStartLoading(true)
+    }, [])
+
+    // EFECTO: Auto-permitir carga después de cierto tiempo como fallback
+    useEffect(() => {
+        const fallbackTimer = setTimeout(() => {
+            if (!shouldStartLoading) {
+                console.log('⏰ Fallback: permitiendo carga después de 3 segundos')
+                setShouldStartLoading(true)
+            }
+        }, 3000) // 3 segundos como fallback
+
+        return () => clearTimeout(fallbackTimer)
+    }, [shouldStartLoading])
 
     const retryLoad = useCallback(() => {
         isLoadingRef.current = false
         hasInitializedRef.current = false
         setError(null)
+        setShouldStartLoading(true) // Permitir carga en retry
         loadInitialData()
     }, [loadInitialData])
 
@@ -303,6 +303,7 @@ export const useInitialLoad = () => {
             isLoadingRef.current = false
             hasInitializedRef.current = false
             setError(null)
+            setShouldStartLoading(true) // Permitir carga en force reload
             await loadInitialData()
         } catch (error) {
             console.error('Error forcing reload:', error)
@@ -329,6 +330,8 @@ export const useInitialLoad = () => {
         error,
         retryLoad,
         forceReload,
-        clearCache, // NUEVA función para usar en componentes
+        clearCache,
+        allowLoading, // NUEVO: función para permitir carga
+        shouldStartLoading, // NUEVO: estado para saber si se debe cargar
     }
 }

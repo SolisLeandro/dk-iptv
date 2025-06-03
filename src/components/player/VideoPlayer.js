@@ -12,12 +12,11 @@ import {
 import { VideoView, useVideoPlayer } from 'expo-video'
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
 import * as ScreenOrientation from 'expo-screen-orientation'
-import * as NavigationBar from 'expo-navigation-bar'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons } from '@expo/vector-icons'
-import * as Haptics from 'expo-haptics'
 
 import { useTheme } from '../../hooks/useTheme'
+import { configurePlayerBars, restoreAppBars } from '../../contexts/ThemeContext' // NUEVO: importar funciones utilitarias
 import PlayerControls from './PlayerControls'
 import StreamSelector from './StreamSelector'
 import QualitySelector from './QualitySelector'
@@ -26,22 +25,13 @@ import StreamDebugger from './StreamDebugger'
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window')
 
 export default function VideoPlayer({ streams, channel, onBack }) {
-    const { colors, isDark } = useTheme()
+    const { colors, isDark } = useTheme() // REMOVIDO: funciones que no existen
     const [isFullscreen, setIsFullscreen] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [currentStreamIndex, setCurrentStreamIndex] = useState(0)
     const [showControls, setShowControls] = useState(true)
     const [error, setError] = useState(null)
     const [showDebugger, setShowDebugger] = useState(false)
-
-    // Referencias para restaurar configuración original
-    const originalThemeStateRef = useRef({
-        isDark,
-        colors,
-        statusBarStyle: isDark ? 'light-content' : 'dark-content',
-        navigationBarColor: isDark ? colors.surface : '#FFFFFF',
-        navigationBarStyle: isDark ? 'light' : 'dark'
-    })
 
     const controlsTimeoutRef = useRef(null)
     const currentStream = streams[currentStreamIndex]
@@ -58,49 +48,22 @@ export default function VideoPlayer({ streams, channel, onBack }) {
         player.play()
     })
 
-    // Función para restaurar configuración del tema
-    const restoreThemeConfiguration = async () => {
-        try {
-            const original = originalThemeStateRef.current
-            console.log('🔄 Restaurando configuración original del tema...')
-
-            // Restaurar StatusBar
-            StatusBar.setHidden(false, 'fade')
-            StatusBar.setBarStyle(original.statusBarStyle, true)
-
-            // Restaurar NavigationBar en Android
-            if (Platform.OS === 'android') {
-                await NavigationBar.setVisibilityAsync('visible')
-                await NavigationBar.setBackgroundColorAsync(original.navigationBarColor)
-                await NavigationBar.setButtonStyleAsync(original.navigationBarStyle)
-            }
-
-            console.log('✅ Configuración del tema restaurada')
-        } catch (error) {
-            console.warn('⚠️ Error restaurando configuración del tema:', error)
-        }
-    }
-
+    // MEJORADO: Configurar barras del sistema al montar el componente
     useEffect(() => {
-        // Guardar estado original del tema al montar
-        originalThemeStateRef.current = {
-            isDark,
-            colors,
-            statusBarStyle: isDark ? 'light-content' : 'dark-content',
-            navigationBarColor: isDark ? colors.surface : '#FFFFFF',
-            navigationBarStyle: isDark ? 'light' : 'dark'
-        }
-
-        // Activar keep awake de forma asíncrona
-        const setupKeepAwake = async () => {
+        const setupPlayer = async () => {
             try {
+                // Configurar barras para reproductor normal (no pantalla completa)
+                await configurePlayerBars(isDark, colors, false)
+                
+                // Activar keep awake
                 await activateKeepAwakeAsync()
+                console.log('🎥 VideoPlayer montado y configurado')
             } catch (error) {
-                console.warn('Error activating keep awake:', error)
+                console.warn('Error setting up player:', error)
             }
         }
-        
-        setupKeepAwake()
+
+        setupPlayer()
         
         return () => {
             try {
@@ -113,19 +76,8 @@ export default function VideoPlayer({ streams, channel, onBack }) {
                 clearTimeout(controlsTimeoutRef.current)
             }
 
-            // IMPORTANTE: Restaurar configuración al desmontar el componente
-            restoreThemeConfiguration()
-        }
-    }, [])
-
-    // Actualizar referencia cuando cambie el tema (por si el usuario cambia tema durante reproducción)
-    useEffect(() => {
-        originalThemeStateRef.current = {
-            isDark,
-            colors,
-            statusBarStyle: isDark ? 'light-content' : 'dark-content',
-            navigationBarColor: isDark ? colors.surface : '#FFFFFF',
-            navigationBarStyle: isDark ? 'light' : 'dark'
+            // IMPORTANTE: Restaurar barras de la app al desmontar
+            restoreAppBars(isDark, colors).catch(console.warn)
         }
     }, [isDark, colors])
 
@@ -181,23 +133,19 @@ export default function VideoPlayer({ streams, channel, onBack }) {
         }
     }, [player, currentStreamIndex, streams.length])
 
+    // MEJORADO: Función de pantalla completa con configuración de barras
     const toggleFullscreen = async () => {
         try {
             if (!isFullscreen) {
                 // Entrar a pantalla completa
+                console.log('🔄 Entrando a pantalla completa')
                 await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE)
-                StatusBar.setHidden(true, 'fade')
-                
-                // Ocultar navegación de Android
-                try {
-                    await NavigationBar.setVisibilityAsync('hidden')
-                } catch (navError) {
-                    console.warn('Error hiding navigation bar:', navError)
-                }
+                await configurePlayerBars(isDark, colors, true) // Configurar para pantalla completa
             } else {
-                // Salir de pantalla completa - RESTAURAR configuración del tema
+                // Salir de pantalla completa
+                console.log('🔄 Saliendo de pantalla completa')
                 await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT)
-                await restoreThemeConfiguration()
+                await configurePlayerBars(isDark, colors, false) // Restaurar para reproductor normal
             }
             setIsFullscreen(!isFullscreen)
         } catch (error) {
@@ -236,13 +184,25 @@ export default function VideoPlayer({ streams, channel, onBack }) {
         }
     }
 
+    // MEJORADO: Función de volver con restauración de barras
     const handleBack = async () => {
-        // Restaurar configuración completa
-        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT)
-        await restoreThemeConfiguration()
-        
-        player.pause()
-        onBack()
+        try {
+            // Restaurar orientación
+            await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT)
+            
+            // Restaurar barras de la app
+            await restoreAppBars(isDark, colors)
+            
+            // Pausar player
+            player.pause()
+            
+            // Callback
+            onBack()
+        } catch (error) {
+            console.error('Error in handleBack:', error)
+            // Aún así ejecutar el callback
+            onBack()
+        }
     }
 
     const handlePlayPause = () => {

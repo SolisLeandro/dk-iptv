@@ -11,13 +11,14 @@ import {
 import { usePlayer } from '../../hooks/usePlayer'
 import { useOrientation } from '../../hooks/useOrientation'
 import { useTheme } from '../../hooks/useTheme'
+import { configurePlayerBars, restoreAppBars } from '../../contexts/ThemeContext' // NUEVO: importar funciones utilitarias
 import { streamsService } from '../../services/api/streams'
 import VideoPlayer from '../../components/player/VideoPlayer'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 
 export default function PlayerScreen({ route, navigation }) {
     const { channel } = route.params
-    const { colors, isDark } = useTheme()
+    const { colors, isDark } = useTheme() // REMOVIDO: funciones que no existen
     const { playChannel, currentChannel, stopPlayback } = usePlayer()
     const { lockPortrait } = useOrientation()
     const [selectedStreamIndex, setSelectedStreamIndex] = useState(0)
@@ -26,6 +27,26 @@ export default function PlayerScreen({ route, navigation }) {
     const [error, setError] = useState(null)
 
     console.log("channel", channel)
+
+    // MEJORADO: Configurar barras al montar la pantalla del reproductor
+    useEffect(() => {
+        const setupPlayerScreen = async () => {
+            try {
+                // Configurar barras para reproductor (no pantalla completa)
+                await configurePlayerBars(isDark, colors, false)
+                console.log('🎬 PlayerScreen configurado')
+            } catch (error) {
+                console.warn('Error setting up PlayerScreen:', error)
+            }
+        }
+
+        setupPlayerScreen()
+
+        // Cleanup al desmontar
+        return () => {
+            restoreAppBars(isDark, colors).catch(console.warn)
+        }
+    }, [isDark, colors])
 
     // Cargar streams para el canal SIN React Query
     useEffect(() => {
@@ -73,25 +94,29 @@ export default function PlayerScreen({ route, navigation }) {
         return () => backHandler.remove()
     }, [])
 
+    // MEJORADO: Función de volver con restauración completa
     const handleBack = async () => {
-        await lockPortrait()
-        stopPlayback()
-        
-        // IMPORTANTE: Restaurar configuración del tema al salir
         try {
-            if (Platform.OS === 'android') {
-                // Restaurar StatusBar al tema correspondiente
-                StatusBar.setHidden(false, 'fade')
-                StatusBar.setBarStyle(isDark ? 'light-content' : 'dark-content', true)
-                
-                // Nota: NavigationBar se restaura en VideoPlayer component
-                console.log('🔄 Configuración del tema restaurada en PlayerScreen')
-            }
+            console.log('🔙 Saliendo del reproductor...')
+            
+            // Restaurar orientación
+            await lockPortrait()
+            
+            // Parar reproducción
+            stopPlayback()
+            
+            // Restaurar barras de la app
+            await restoreAppBars(isDark, colors)
+            
+            // Navegar de vuelta
+            navigation.goBack()
+            
+            console.log('✅ Salida del reproductor completada')
         } catch (error) {
-            console.warn('⚠️ Error restaurando configuración en PlayerScreen:', error)
+            console.error('Error in handleBack:', error)
+            // Aún así navegar de vuelta
+            navigation.goBack()
         }
-        
-        navigation.goBack()
     }
 
     const handleStreamChange = (index) => {

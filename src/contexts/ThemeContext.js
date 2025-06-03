@@ -39,27 +39,6 @@ const themeReducer = (state, action) => {
     }
 }
 
-// Función para actualizar la barra de navegación de Android
-const updateNavigationBar = async (isDark, colors) => {
-    if (Platform.OS === 'android') {
-        try {
-            // Configurar color de fondo de la barra de navegación
-            await NavigationBar.setBackgroundColorAsync(
-                isDark ? colors.surface : '#FFFFFF'
-            )
-            
-            // Configurar estilo de los botones (light/dark)
-            await NavigationBar.setButtonStyleAsync(
-                isDark ? 'light' : 'dark'
-            )
-            
-            console.log(`🎨 Navigation bar actualizada: ${isDark ? 'dark' : 'light'}`)
-        } catch (error) {
-            console.warn('⚠️ Error actualizando navigation bar:', error)
-        }
-    }
-}
-
 export const ThemeProvider = ({ children }) => {
     const systemColorScheme = useColorScheme()
 
@@ -79,15 +58,32 @@ export const ThemeProvider = ({ children }) => {
         dispatch({ type: 'SET_SYSTEM_THEME', payload: systemColorScheme || 'light' })
     }, [systemColorScheme])
 
-    // Efecto para actualizar la barra de navegación cuando cambie el tema
+    // Configurar barras del sistema para la app normal
     useEffect(() => {
-        updateNavigationBar(state.isDark, state.colors)
-        
-        // También actualizar StatusBar
-        if (Platform.OS === 'android') {
-            StatusBar.setBackgroundColor(state.colors.surface, true)
-            StatusBar.setBarStyle(state.isDark ? 'light-content' : 'dark-content', true)
+        const configureAppBars = async () => {
+            if (Platform.OS === 'android') {
+                try {
+                    console.log('📱 Configurando barras para la app normal')
+                    
+                    // StatusBar: transparente con iconos según el tema
+                    StatusBar.setHidden(false, 'fade')
+                    StatusBar.setTranslucent(true)
+                    StatusBar.setBackgroundColor('rgba(0,0,0,0)', true) // Transparente
+                    StatusBar.setBarStyle(state.isDark ? 'light-content' : 'dark-content', true)
+                    
+                    // NavigationBar: color de la superficie de la app
+                    await NavigationBar.setVisibilityAsync('visible')
+                    await NavigationBar.setBackgroundColorAsync(state.colors.surface)
+                    await NavigationBar.setButtonStyleAsync(state.isDark ? 'light' : 'dark')
+                    
+                    console.log(`✅ Barras del sistema configuradas para app: ${state.isDark ? 'dark' : 'light'}`)
+                } catch (error) {
+                    console.warn('⚠️ Error configurando barras de la app:', error)
+                }
+            }
         }
+
+        configureAppBars()
     }, [state.isDark, state.colors])
 
     const loadTheme = async () => {
@@ -127,7 +123,11 @@ export const ThemeProvider = ({ children }) => {
     }
 
     return (
-        <ThemeContext.Provider value={{ ...state, setTheme, toggleTheme }}>
+        <ThemeContext.Provider value={{ 
+            ...state, 
+            setTheme, 
+            toggleTheme,
+        }}>
             {children}
         </ThemeContext.Provider>
     )
@@ -139,4 +139,52 @@ export const useTheme = () => {
         throw new Error('useTheme must be used within ThemeProvider')
     }
     return context
+}
+
+// NUEVO: Funciones utilitarias para configurar barras del sistema
+export const configurePlayerBars = async (isDark, colors, isFullscreen = false) => {
+    if (Platform.OS === 'android') {
+        try {
+            if (isFullscreen) {
+                // Pantalla completa: barras ocultas
+                console.log('🎬 Configurando barras para pantalla completa')
+                StatusBar.setHidden(true, 'fade')
+                await NavigationBar.setVisibilityAsync('hidden')
+            } else {
+                // Reproductor normal: StatusBar oculta, NavigationBar con color del selector
+                console.log('🎥 Configurando barras para reproductor normal')
+                StatusBar.setHidden(true, 'fade')
+                await NavigationBar.setVisibilityAsync('visible')
+                await NavigationBar.setBackgroundColorAsync(colors.surface)
+                await NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark')
+            }
+            
+            console.log(`✅ Barras del reproductor configuradas: ${isFullscreen ? 'fullscreen' : 'normal'}`)
+        } catch (error) {
+            console.warn('⚠️ Error configurando barras del reproductor:', error)
+        }
+    }
+}
+
+export const restoreAppBars = async (isDark, colors) => {
+    if (Platform.OS === 'android') {
+        try {
+            console.log('📱 Restaurando barras de la app')
+            
+            // StatusBar: transparente con iconos según el tema
+            StatusBar.setHidden(false, 'fade')
+            StatusBar.setTranslucent(true)
+            StatusBar.setBackgroundColor('rgba(0,0,0,0)', true) // Transparente
+            StatusBar.setBarStyle(isDark ? 'light-content' : 'dark-content', true)
+            
+            // NavigationBar: color de la superficie de la app
+            await NavigationBar.setVisibilityAsync('visible')
+            await NavigationBar.setBackgroundColorAsync(colors.surface)
+            await NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark')
+            
+            console.log(`✅ Barras de la app restauradas: ${isDark ? 'dark' : 'light'}`)
+        } catch (error) {
+            console.warn('⚠️ Error restaurando barras de la app:', error)
+        }
+    }
 }

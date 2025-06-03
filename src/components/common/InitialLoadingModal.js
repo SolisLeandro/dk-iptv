@@ -22,16 +22,26 @@ const loadingSteps = [
     { id: 4, text: '¡Listo!', icon: 'checkmark-circle', weight: 5 },
 ]
 
+// NUEVO: Mensajes para la fase de espera inicial
+const waitingMessages = [
+    'Preparando la aplicación...',
+    'Inicializando componentes...',
+    'Cargando interfaz...',
+    'Optimizando rendimiento...',
+]
+
 export default function InitialLoadingModal({ 
     visible, 
     progress = 0, 
     error = null, 
     onComplete, 
-    onRetry 
+    onRetry,
+    allowDataLoad = false // NUEVO: prop para saber si se permite cargar datos
 }) {
     const { colors } = useTheme()
     const [currentStep, setCurrentStep] = useState(0)
     const [displayProgress, setDisplayProgress] = useState(0)
+    const [waitingMessageIndex, setWaitingMessageIndex] = useState(0) // NUEVO: para mensajes de espera
     
     const scaleAnim = new Animated.Value(0.8)
     const progressAnim = new Animated.Value(0)
@@ -78,9 +88,20 @@ export default function InitialLoadingModal({
         }
     }, [visible, error])
 
-    // Actualizar progreso y step actual
+    // NUEVO: Efecto para rotar mensajes de espera cuando no se permite cargar datos
     useEffect(() => {
-        if (progress >= 0 && !error) {
+        if (!allowDataLoad && visible) {
+            const interval = setInterval(() => {
+                setWaitingMessageIndex(prev => (prev + 1) % waitingMessages.length)
+            }, 1500) // Cambiar mensaje cada 1.5 segundos
+
+            return () => clearInterval(interval)
+        }
+    }, [allowDataLoad, visible])
+
+    // Actualizar progreso y step actual (solo cuando se permite cargar)
+    useEffect(() => {
+        if (progress >= 0 && !error && allowDataLoad) {
             // Calcular step basado en el peso acumulativo
             let accumulatedWeight = 0
             let newStep = 0
@@ -129,11 +150,25 @@ export default function InitialLoadingModal({
 
             return () => clearTimeout(timer)
         }
-    }, [progress, error])
+    }, [progress, error, allowDataLoad])
 
-    const currentStepData = error 
-        ? { icon: 'warning', text: 'Error de conexión' }
-        : (loadingSteps[currentStep] || loadingSteps[0])
+    // MODIFICADO: Determinar qué mostrar basado en el estado
+    const getCurrentDisplayData = () => {
+        if (error) {
+            return { icon: 'warning', text: 'Error de conexión' }
+        }
+        
+        if (!allowDataLoad) {
+            return { 
+                icon: 'hourglass', 
+                text: waitingMessages[waitingMessageIndex] 
+            }
+        }
+        
+        return loadingSteps[currentStep] || loadingSteps[0]
+    }
+
+    const currentDisplayData = getCurrentDisplayData()
 
     if (!visible) return null
 
@@ -180,7 +215,7 @@ export default function InitialLoadingModal({
                         ]}
                     >
                         <Ionicons
-                            name={currentStepData.icon}
+                            name={currentDisplayData.icon}
                             size={48}
                             color={error ? '#DC3545' : colors.primary}
                         />
@@ -194,7 +229,9 @@ export default function InitialLoadingModal({
                     <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
                         {error 
                             ? 'No se pudo conectar al servidor'
-                            : 'Preparando tu experiencia'
+                            : allowDataLoad 
+                                ? 'Preparando tu experiencia'
+                                : 'Iniciando aplicación'
                         }
                     </Text>
 
@@ -202,11 +239,11 @@ export default function InitialLoadingModal({
                     <Text style={[styles.stepText, { 
                         color: error ? '#DC3545' : colors.primary 
                     }]}>
-                        {error || currentStepData.text}
+                        {error || currentDisplayData.text}
                     </Text>
 
-                    {/* Barra de progreso - solo si no hay error */}
-                    {!error && (
+                    {/* Barra de progreso - solo si se permite cargar datos y no hay error */}
+                    {allowDataLoad && !error && (
                         <>
                             <View style={[styles.progressContainer, { backgroundColor: colors.border }]}>
                                 <Animated.View
@@ -257,6 +294,26 @@ export default function InitialLoadingModal({
                         </>
                     )}
 
+                    {/* NUEVO: Indicador de espera cuando no se permite cargar */}
+                    {!allowDataLoad && !error && (
+                        <View style={styles.waitingIndicator}>
+                            <View style={styles.waitingDots}>
+                                {[0, 1, 2].map((index) => (
+                                    <Animated.View
+                                        key={index}
+                                        style={[
+                                            styles.waitingDot,
+                                            {
+                                                backgroundColor: colors.primary,
+                                                opacity: waitingMessageIndex % 3 === index ? 1 : 0.3,
+                                            }
+                                        ]}
+                                    />
+                                ))}
+                            </View>
+                        </View>
+                    )}
+
                     {/* Botón de reintentar si hay error */}
                     {error && (
                         <TouchableOpacity
@@ -272,12 +329,14 @@ export default function InitialLoadingModal({
                     <Text style={[styles.infoText, { color: colors.textMuted }]}>
                         {error 
                             ? 'Verifica tu conexión a internet'
-                            : 'Configurando más de 10,000 canales IPTV...'
+                            : allowDataLoad
+                                ? 'Configurando más de 10,000 canales IPTV...'
+                                : 'Optimizando la interfaz para la mejor experiencia'
                         }
                     </Text>
                     
                     {/* Mensaje adicional */}
-                    {!error && (
+                    {allowDataLoad && !error && (
                         <Text style={[styles.tipText, { color: colors.textSecondary }]}>
                             Esta carga inicial solo ocurre una vez
                         </Text>
@@ -376,6 +435,20 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.2,
         shadowRadius: 1,
+    },
+    // NUEVO: Estilos para indicador de espera
+    waitingIndicator: {
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    waitingDots: {
+        flexDirection: 'row',
+        gap: 8,
+    },
+    waitingDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
     },
     retryButton: {
         flexDirection: 'row',

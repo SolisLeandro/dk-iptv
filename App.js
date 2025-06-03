@@ -15,6 +15,14 @@ import LoadingSpinner from './src/components/common/LoadingSpinner'
 import InitialLoadingModal from './src/components/common/InitialLoadingModal'
 import { useInitialLoad } from './src/hooks/useInitialLoad'
 
+if (!__DEV__) {
+  console.log = () => {}
+  console.warn = () => {}
+  console.error = () => {}
+  console.info = () => {}
+  console.debug = () => {}
+}
+
 // Keep splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync()
 
@@ -22,6 +30,17 @@ SplashScreen.preventAutoHideAsync()
 function AppContent() {
     const { isLoading, progress, error, retryLoad } = useInitialLoad()
     const [showInitialLoading, setShowInitialLoading] = useState(true)
+    const [allowDataLoad, setAllowDataLoad] = useState(false) // NUEVO: controlar cuándo empezar a cargar datos
+
+    // NUEVO: Delay para permitir que las animaciones se completen
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            console.log('🎯 Permitiendo carga de datos después del delay de animación')
+            setAllowDataLoad(true)
+        }, 1500) // 1.5 segundos de delay para animaciones
+
+        return () => clearTimeout(timer)
+    }, [])
 
     const handleLoadingComplete = () => {
         setShowInitialLoading(false)
@@ -29,6 +48,7 @@ function AppContent() {
 
     const handleRetry = () => {
         setShowInitialLoading(true)
+        setAllowDataLoad(true) // Permitir carga inmediata en retry
         retryLoad()
     }
 
@@ -36,11 +56,12 @@ function AppContent() {
         <>
             <AppNavigator />
             <InitialLoadingModal
-                visible={isLoading || showInitialLoading}
-                progress={progress}
-                error={error}
+                visible={(isLoading && allowDataLoad) || showInitialLoading}
+                progress={allowDataLoad ? progress : 0} // Solo mostrar progreso cuando se permite cargar
+                error={allowDataLoad ? error : null} // Solo mostrar errores cuando se permite cargar
                 onComplete={handleLoadingComplete}
                 onRetry={handleRetry}
+                allowDataLoad={allowDataLoad} // NUEVO: pasar esta prop al modal
             />
         </>
     )
